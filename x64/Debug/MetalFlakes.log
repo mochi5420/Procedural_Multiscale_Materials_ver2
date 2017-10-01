@@ -1,0 +1,10 @@
+﻿  Microsoft (R) Direct3D Shader Compiler 10.1
+  Copyright (C) 2013 Microsoft. All rights reserved.
+  
+EXEC : warning X4717: Effects deprecated for D3DCompiler_47
+  
+  failed writing D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Shaders\DrawTexture.cfx
+FXC : warning X4717: Effects deprecated for D3DCompiler_47
+  
+  compilation object save succeeded; see D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\x64\Debug\DrawTexture.cso
+  MetalFlakes.vcxproj -> D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\x64\Debug\Procedural_Multiscale_Materials.exe

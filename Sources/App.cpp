@@ -68,16 +68,16 @@ LRESULT CALLBACK App::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 		//Rotation
 		case VK_UP:
-			g_pitch += 0.01f;
+			g_pitch += 0.05f;
 			break;
 		case VK_DOWN:
-			g_pitch -= 0.01f;
+			g_pitch -= 0.05f;
 			break;
 		case VK_RIGHT:
-			g_roll -= 0.01f;
+			g_roll -= 0.05f;
 			break;
 		case VK_LEFT:
-			g_roll += 0.01f;
+			g_roll += 0.05f;
 			break;
 		}
 
@@ -284,7 +284,6 @@ bool App::InitShader()
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 	int numElements = sizeof(layout) / sizeof(layout[0]);
 
@@ -336,10 +335,10 @@ bool App::InitShader()
 	//DRAW_GLINTシェーダー用　Vertex Buffer作成
 	Vertex vertices[] =
 	{
-		D3DXVECTOR4(-1.0, -1.0, 0.0, 1.0), D3DXVECTOR3(0.0, 0.0, -1.0), D3DXVECTOR2(0.0, 0.0),
-		D3DXVECTOR4(-1.0, 1.0, 0.0, 1.0), D3DXVECTOR3(0.0, 0.0, -1.0), D3DXVECTOR2(1.0, 0.0),
-		D3DXVECTOR4(1.0, -1.0, 0.0, 1.0), D3DXVECTOR3(0.0, 0.0, -1.0), D3DXVECTOR2(0.0, 1.0),
-		D3DXVECTOR4(1.0, 1.0, 0.0, 1.0), D3DXVECTOR3(0.0, 0.0, -1.0), D3DXVECTOR2(1.0, 1.0),
+		D3DXVECTOR4(-1.0, -1.0, 0.0, 1.0), D3DXVECTOR3(0.0, 0.0, -1.0),
+		D3DXVECTOR4(-1.0, 1.0, 0.0, 1.0), D3DXVECTOR3(0.0, 0.0, -1.0),
+		D3DXVECTOR4(1.0, -1.0, 0.0, 1.0), D3DXVECTOR3(0.0, 0.0, -1.0),
+		D3DXVECTOR4(1.0, 1.0, 0.0, 1.0), D3DXVECTOR3(0.0, 0.0, -1.0),
 	};
 
 	D3D11_BUFFER_DESC bd;
@@ -413,7 +412,7 @@ void App::MainLoop()
 void App::OnRender()
 {
 	//ビュー行列
-	D3DXVECTOR3 cameraPos(0.0f, 0.0f, -3.42f);	//カメラ位置
+	D3DXVECTOR3 cameraPos(0.0f, 0.0f, -5.0f);	//カメラ位置
 	D3DXVECTOR3 lookAtPos(0.0f, 0.0f, 0.0f);	//注視位置
 	D3DXVECTOR3 upVec(0.0f, 1.0f, 0.0f);		//上方位置
 	D3DXMatrixLookAtLH(&m_ViewMatrix, &cameraPos, &lookAtPos, &upVec);
@@ -560,10 +559,13 @@ void App::OnRender()
 	*/
 
 	//モデルの回転行列
-	D3DXMATRIX RollMatrix, PitchMatrix;
+	D3DXMATRIX WorldMatrix, RollMatrix, PitchMatrix, ScallMatrix;
 	D3DXMatrixRotationX(&PitchMatrix, g_pitch);
 	D3DXMatrixRotationY(&RollMatrix, g_roll);
+	D3DXMatrixScaling(&ScallMatrix, 2.0f, 2.0f, 2.0f);
+	WorldMatrix = ScallMatrix* RollMatrix * PitchMatrix;
 
+	
 
 	//シェーダーのコンスタントバッファーに各種データを渡す
 	ConstantBuffer cb;
@@ -572,10 +574,13 @@ void App::OnRender()
 	if (SUCCEEDED(m_pDeviceContext->Map(m_pConstantBuffer[DRAW_GLINT].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &pData)))
 	{
 		//WVP行列をシェーダーに渡す
-		cb.WVP = RollMatrix * PitchMatrix * m_ViewMatrix*m_ProjectionMatrix;
+		cb.WVP = WorldMatrix * m_ViewMatrix*m_ProjectionMatrix;
 		D3DXMatrixTranspose(&cb.WVP, &cb.WVP);
 
-		cb.lightPos = D3DXVECTOR3(0.0, 2.5f, -3.42f);
+		cb.W = WorldMatrix;
+		D3DXMatrixTranspose(&cb.W, &cb.W);
+
+		cb.lightPos = D3DXVECTOR3(0.0, 0.0f, -5.0f);
 		 
 		//cb.time = currentTime / 1000.0f;
 

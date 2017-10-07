@@ -59,8 +59,6 @@ private:
 	{
 		D3DXVECTOR4 Position;
 		D3DXVECTOR3 Normal;
-		D3DXVECTOR2 UV;
-
 	};
 
 
@@ -70,6 +68,7 @@ private:
 	struct ConstantBuffer
 	{
 		ALIGN(16) D3DXMATRIX  WVP;
+		ALIGN(16) D3DXMATRIX  W;
 		ALIGN(16) D3DXVECTOR3  lightPos;
 		//ALIGN(16) float		  time;
 		//ALIGN(16) D3DXVECTOR2 mouse;

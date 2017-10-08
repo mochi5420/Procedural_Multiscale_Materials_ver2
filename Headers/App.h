@@ -35,6 +35,8 @@ static const int WINDOW_WIDTH = 512;	//ウィンドウ幅
 static const int WINDOW_HEIGHT = 512;	//ウィンドウ高さ
 static const wchar_t* const APP_NAME = L"Window";	//Windowのタイトル
 static const int DRAW_GLINT = 0;
+//static const LPSTR OBJ_FILE = "Volkswagen.obj";
+static const LPSTR OBJ_FILE = "Resources/Obj/VWUP.obj";
 
 
 //------------------------------------------------------------------------------------------
@@ -70,12 +72,10 @@ private:
 		ALIGN(16) D3DXMATRIX  WVP;
 		ALIGN(16) D3DXMATRIX  W;
 		ALIGN(16) D3DXVECTOR3  lightPos;
-		//ALIGN(16) float		  time;
-		//ALIGN(16) D3DXVECTOR2 mouse;
-		//ALIGN(16) D3DXVECTOR2 roughness;
-		//ALIGN(16) D3DXVECTOR2 microRoughness;
-		//ALIGN(16) float variation;
-		//ALIGN(16) float density;
+		ALIGN(16) D3DXVECTOR2 roughness;
+		ALIGN(16) D3DXVECTOR2 microRoughness;
+		ALIGN(16) float variation;
+		ALIGN(16) float density;
 	};	
 		
 	//=============================================================================================
@@ -96,6 +96,8 @@ private:
 	ComPtr<ID3D11PixelShader>		m_pPixelShader[1];
 	ComPtr<ID3D11Buffer>			m_pConstantBuffer[1];
 	ComPtr<ID3D11Buffer>			m_pVertexBuffer;	
+	ComPtr<ID3D11Buffer>            m_pIndexBuffer;
+	DWORD							NumFace;
 
 	D3DXMATRIX m_ViewMatrix;
 	D3DXMATRIX m_ProjectionMatrix;

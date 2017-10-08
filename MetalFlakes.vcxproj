@@ -22,10 +22,13 @@
     <ClCompile Include="Sources\App.cpp" />
     <ClCompile Include="Sources\FPS.cpp" />
     <ClCompile Include="Sources\Main.cpp" />
+    <ClCompile Include="Sources\ObjMeshLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Headers\App.h" />
+    <ClInclude Include="Headers\Debug.h" />
     <ClInclude Include="Headers\FPS.h" />
+    <ClInclude Include="Headers\ObjMeshLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\Shaders\DrawTexture.hlsl" />

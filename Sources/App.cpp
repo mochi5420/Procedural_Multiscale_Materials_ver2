@@ -2,15 +2,8 @@
 //	Includes
 //------------------------------------------------------------------------------------------
 #include "App.h"
+#include "ObjMeshLoader.h"
 #include "FPS.h"
-
-
-//------------------------------------------------------------------------------------------
-//	Global Variables
-//------------------------------------------------------------------------------------------
-//Rotation
-float g_roll = 0.0f;
-float g_pitch = 0.0f;
 
 
 //------------------------------------------------------------------------------------------
@@ -64,20 +57,6 @@ LRESULT CALLBACK App::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		{
 		case VK_ESCAPE:	//ESCキーで修了
 			PostQuitMessage(0);
-			break;
-
-		//Rotation
-		case VK_UP:
-			g_pitch += 0.05f;
-			break;
-		case VK_DOWN:
-			g_pitch -= 0.05f;
-			break;
-		case VK_RIGHT:
-			g_roll -= 0.05f;
-			break;
-		case VK_LEFT:
-			g_roll += 0.05f;
 			break;
 		}
 
@@ -220,12 +199,52 @@ bool App::InitD3D()
 	//ラスタライズ設定
 	D3D11_RASTERIZER_DESC rdc;
 	SecureZeroMemory(&rdc, sizeof(rdc));
-	rdc.CullMode = D3D11_CULL_BACK;		//裏面も塗りつぶす　
-	rdc.FillMode = D3D11_FILL_SOLID;	//ポリゴン内部も塗りつぶす
-	rdc.FrontCounterClockwise = FALSE;	//反時計回りに頂点を結ぶ（三角形メッシュ）
+	rdc.CullMode = D3D11_CULL_BACK;	
+	rdc.FillMode = D3D11_FILL_SOLID;
+	rdc.FrontCounterClockwise = FALSE;
 
 	m_pDevice->CreateRasterizerState(&rdc, &m_pRasterizerState);
 	m_pDeviceContext->RSSetState(m_pRasterizerState.Get());
+
+
+	//Objの読み込み
+	ObjMeshLoader obj;
+
+	hr = obj.CreateMesh(m_pDevice.Get(), m_pVertexBuffer.GetAddressOf(), 
+							m_pIndexBuffer.GetAddressOf(), NumFace, OBJ_FILE);
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	//Debug用の板ポリ
+	//{
+	//	Vertex vertices[] =
+	//	{
+	//		D3DXVECTOR4(-1.0, -1.0, 0.0, 1.0), D3DXVECTOR3(0.0, 0.0, -1.0),
+	//		D3DXVECTOR4(-1.0, 1.0, 0.0, 1.0), D3DXVECTOR3(0.0, 0.0, -1.0),
+	//		D3DXVECTOR4(1.0, -1.0, 0.0, 1.0), D3DXVECTOR3(0.0, 0.0, -1.0),
+	//		D3DXVECTOR4(1.0, 1.0, 0.0, 1.0), D3DXVECTOR3(0.0, 0.0, -1.0),
+	//	};
+
+	//	D3D11_BUFFER_DESC bd;
+	//	bd.Usage = D3D11_USAGE_DEFAULT;
+	//	bd.ByteWidth = sizeof(Vertex) * 4;
+	//	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	//	bd.CPUAccessFlags = 0;
+	//	bd.MiscFlags = 0;
+
+	//	D3D11_SUBRESOURCE_DATA InitData;
+	//	InitData.pSysMem = vertices;
+
+	//	hr = m_pDevice->CreateBuffer(&bd, &InitData, m_pVertexBuffer.GetAddressOf());
+
+	//	if (FAILED(hr))
+	//	{
+	//		return false;
+	//	}
+	//}
 
 	return true;
 }
@@ -332,32 +351,6 @@ bool App::InitShader()
 	}
 
 
-	//DRAW_GLINTシェーダー用　Vertex Buffer作成
-	Vertex vertices[] =
-	{
-		D3DXVECTOR4(-1.0, -1.0, 0.0, 1.0), D3DXVECTOR3(0.0, 0.0, -1.0),
-		D3DXVECTOR4(-1.0, 1.0, 0.0, 1.0), D3DXVECTOR3(0.0, 0.0, -1.0),
-		D3DXVECTOR4(1.0, -1.0, 0.0, 1.0), D3DXVECTOR3(0.0, 0.0, -1.0),
-		D3DXVECTOR4(1.0, 1.0, 0.0, 1.0), D3DXVECTOR3(0.0, 0.0, -1.0),
-	};
-
-	D3D11_BUFFER_DESC bd;
-	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(Vertex) * 4;
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bd.CPUAccessFlags = 0;
-	bd.MiscFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA InitData;
-	InitData.pSysMem = vertices;
-
-	hr = m_pDevice->CreateBuffer(&bd, &InitData, m_pVertexBuffer.GetAddressOf());
-
-	if (FAILED(hr))
-	{
-		return false;
-	}
-
 	//コンスタントバッファー作成
 	D3D11_BUFFER_DESC cbDesc;
 	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -454,45 +447,52 @@ void App::OnRender()
 	m_pDeviceContext->IASetVertexBuffers(0, 1, m_pVertexBuffer.GetAddressOf(), &stride, &offset);
 
 
+	//インデックスバッファーをセット
+	stride = sizeof(int);
+	offset = 0;
+	m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+
+
 	//キーボードによる入力はとりあえずここで
-	/*
-	//time
-	static float currentTime = 0.0f;
-	if (GetKeyState('T') & 0x80) {
-		if (GetKeyState(VK_RIGHT) & 0x80)
-		{
-			currentTime += 100.0f;
+	//モデルのRotation
+	static float roll = 0.0f;
+	static float pitch = 0.0f;
+	if (GetKeyState(VK_SHIFT) & 0x80) {
+		if (GetKeyState(VK_UP) & 0x80) {
+			pitch += 0.01f;
 		}
-		if (GetKeyState(VK_LEFT) & 0x80)
-		{
-			currentTime -= 100.0f;
+		if (GetKeyState(VK_DOWN) & 0x80) {
+			pitch -= 0.01f;
+		}
+		if (GetKeyState(VK_RIGHT) & 0x80) {
+			roll -= 0.01f;
+		}
+		if (GetKeyState(VK_LEFT) & 0x80) {
+			roll += 0.01f;
 		}
 	}
-	//自動再生する時はこっち
-	//static float startTime = timeGetTime();
-	//float currentTime = timeGetTime() - startTime;
 
-	
-	//その他各種パラメータ変更（とりあえず緑の車のみ）
+
+	//その他各種パラメータ変更
 	char str[60];
 
-	static D3DXVECTOR2 roughness(0.05f, 0.3f);
+	static D3DXVECTOR2 roughness(0.6f, 0.6f);
 	if (GetKeyState('R') & 0x80) {
 		if (GetKeyState(VK_RIGHT) & 0x80)
 		{
-			roughness.x += 0.01f;
+			roughness.x += 0.001f;
 		}
-		else if (GetKeyState(VK_LEFT) & 0x80)
+		else if ((GetKeyState(VK_LEFT) & 0x80) && (roughness.x > 0.0f))
 		{
-			roughness.x -= 0.01f;
+			roughness.x -= 0.001f;
 		}
-		else if (GetKeyState(VK_UP) & 0x80)
+		if (GetKeyState(VK_UP) & 0x80)
 		{
-			roughness.y += 0.01f;
+			roughness.y += 0.001f;
 		}
-		else if (GetKeyState(VK_DOWN) & 0x80)
+		else if ((GetKeyState(VK_DOWN) & 0x80) && (roughness.y > 0.0f))
 		{
-			roughness.y -= 0.01f;
+			roughness.y -= 0.001f;
 		}
 
 		sprintf(str, "roughness=%f, %f", roughness.x, roughness.y);
@@ -501,49 +501,49 @@ void App::OnRender()
 
 	static D3DXVECTOR2 microRoughness(0.05f, 0.05f);
 	if (GetKeyState('M') & 0x80) {
-		if (GetKeyState(VK_RIGHT) & 0x80)
+		if ((GetKeyState(VK_RIGHT) & 0x80) && (microRoughness.x < roughness.x))
 		{
-			microRoughness.x += 0.01f;
+			microRoughness.x += 0.001f;
 		}
-		if (GetKeyState(VK_LEFT) & 0x80)
+		else if ((GetKeyState(VK_LEFT) & 0x80) && (microRoughness.x > 0.0f))
 		{
-			microRoughness.x -= 0.01f;
+			microRoughness.x -= 0.001f;
 		}
-		if (GetKeyState(VK_UP) & 0x80)
+		if ((GetKeyState(VK_UP) & 0x80) && (microRoughness.y < roughness.y))
 		{
-			microRoughness.y += 0.01f;
+			microRoughness.y += 0.001f;
 		}
-		if (GetKeyState(VK_DOWN) & 0x80)
+		else if ((GetKeyState(VK_DOWN) & 0x80) && (microRoughness.y > 0.0f))
 		{
-			microRoughness.y -= 0.01f;
+			microRoughness.y -= 0.001f;
 		}
 		sprintf(str, "microRoughness=%f , %f", microRoughness.x, microRoughness.y);
 		SetWindowTextA(m_hWnd, str);
 	}
 
-	static float variation = 10.0f;
+	static float variation = 100.0f;
 	if (GetKeyState('V') & 0x80) {
 		if (GetKeyState(VK_RIGHT) & 0x80)
 		{
-			variation += 10.0f;
+			variation += 1.0f;
 		}
 		if (GetKeyState(VK_LEFT) & 0x80)
 		{
-			variation -= 10.0f;
+			variation -= 1.0f;
 		}
 		sprintf(str, "variation=%f", variation);
 		SetWindowTextA(m_hWnd, str);
 	}
 
-	static float density = 2.e7;
+	static float density = 5.e8;
 	if (GetKeyState('D') & 0x80) {
 		if (GetKeyState(VK_RIGHT) & 0x80)
 		{
-			density += 1.e6;
+			density += 1.e4;
 		}
 		if (GetKeyState(VK_LEFT) & 0x80)
 		{
-			density -= 1.e6f;
+			density -= 1.e4f;
 		}
 		sprintf(str, "density=%e", density);
 		SetWindowTextA(m_hWnd, str);
@@ -556,13 +556,14 @@ void App::OnRender()
 	//	GetCursorPos(&point);
 	//	ScreenToClient(m_hWnd, &point);
 	//}
-	*/
+	
 
 	//モデルの回転行列
 	D3DXMATRIX WorldMatrix, RollMatrix, PitchMatrix, ScallMatrix;
-	D3DXMatrixRotationX(&PitchMatrix, g_pitch);
-	D3DXMatrixRotationY(&RollMatrix, g_roll);
-	D3DXMatrixScaling(&ScallMatrix, 2.0f, 2.0f, 2.0f);
+	D3DXMatrixRotationX(&PitchMatrix, pitch);
+	D3DXMatrixRotationY(&RollMatrix, roll);
+	//D3DXMatrixScaling(&ScallMatrix, 2.0, 2.0f, 2.0f);
+	D3DXMatrixScaling(&ScallMatrix, 1.0f / 150.0f, 1.0f / 150.0f, 1.0f / 150.0f);
 	WorldMatrix = ScallMatrix* RollMatrix * PitchMatrix;
 
 	
@@ -581,15 +582,13 @@ void App::OnRender()
 		D3DXMatrixTranspose(&cb.W, &cb.W);
 
 		cb.lightPos = D3DXVECTOR3(0.0, 0.0f, -5.0f);
-		 
-		//cb.time = currentTime / 1000.0f;
-
+		
 		//cb.mouse = D3DXVECTOR2(point.x, point.y) / 10.0;
 
-		//cb.roughness = roughness;
-		//cb.microRoughness = microRoughness;
-		//cb.variation = variation;
-		//cb.density = density;
+		cb.roughness = roughness;
+		cb.microRoughness = microRoughness;
+		cb.variation = variation;
+		cb.density = density;
 
 		memcpy_s(pData.pData, pData.RowPitch, (void*)(&cb), sizeof(cb));
 		m_pDeviceContext->Unmap(m_pConstantBuffer[DRAW_GLINT].Get(), 0);
@@ -614,7 +613,8 @@ void App::OnRender()
 	
 	
 	//プリミティブをレンダリング
-	m_pDeviceContext->Draw(4, 0);
+	m_pDeviceContext->DrawIndexed(NumFace * 3, 0, 0);
+	//m_pDeviceContext->Draw(4, 0);		//Debugで使う板ポリ用
 
 	m_pSwapChain->Present(0, 0);	//画面更新（バックバッファをフロントバッファに）	
 }

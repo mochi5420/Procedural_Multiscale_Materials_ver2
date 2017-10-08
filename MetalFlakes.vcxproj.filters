@@ -26,12 +26,21 @@
     <ClCompile Include="Sources\Main.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\ObjMeshLoader.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Headers\FPS.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="Headers\App.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\ObjMeshLoader.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Debug.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

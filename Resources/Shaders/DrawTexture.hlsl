@@ -6,12 +6,11 @@ cbuffer CONSTANT_BUFFER :register(b0)
     matrix WVP              : packoffset(c0);
     matrix W                : packoffset(c4);
     float3 LightPos         : packoffset(c8);
-    //float  Time           : packoffset(c4);
+    float2 Roughness        : packoffset(c9);
+    float2 MicroRoughness   : packoffset(c10);
+    float Variation         : packoffset(c11);
+    float Density           : packoffset(c12);
     //float2 Mouse          : packoffset(c5);
-    //float2 Roughness      : packoffset(c6);
-    //float2 MicroRoughness : packoffset(c7);
-    //float Variation       : packoffset(c8);
-    //float Density         : packoffset(c9);
 };
 
 //------------------------------------------------------------------------------------------
@@ -461,10 +460,10 @@ float4 PS(VS_OUTPUT input) : SV_Target
     //float3 col = float3(0,1,0);
     float3 col = lerp(float3(0.1, 0.2, 0.5), float3(0.95, 0.8, 0.75), (1.0 - abs(-V.y)) * dif);
            
-    col *= lightPower * lerp(0.02, 1.0, dif);
+    //col *= lightPower * lerp(0.02, 1.0, dif);
 
     if (specularity > 0.0 && dif > 0.0 && dot(V, normal) > 0.0)
-    col += specularity * (glints(texCO, duvdx, duvdy, ctf, L, normal, V, roughness, microRoughness, searchConeAngle, variation, dynamicRange, density))
+    col += specularity * (glints(texCO, duvdx, duvdy, ctf, L, normal, V, Roughness, MicroRoughness, searchConeAngle, Variation, dynamicRange, Density))
                     * lightPower; // * lerp(0.05, 1.0, occ);
 
     return float4(col, 1);

@@ -208,15 +208,18 @@ bool App::InitD3D()
 
 
 	//Objの読み込み
-	ObjMeshLoader obj;
-
-	hr = obj.CreateMesh(m_pDevice.Get(), m_pVertexBuffer.GetAddressOf(), 
-							m_pIndexBuffer.GetAddressOf(), NumFace, OBJ_FILE);
-
-	if (FAILED(hr))
 	{
-		return false;
+		ObjMeshLoader obj;
+
+		hr = obj.CreateMesh(m_pDevice.Get(), m_pVertexBuffer.GetAddressOf(),
+			m_pIndexBuffer.GetAddressOf(), NumFace, OBJ_FILE);
+
+		if (FAILED(hr))
+		{
+			return false;
+		}
 	}
+	
 
 	//Debug用の板ポリ
 	//{
@@ -404,10 +407,51 @@ void App::MainLoop()
 //------------------------------------------------------------------------------------------
 void App::OnRender()
 {
+	//cameraの移動
+	static float cameraRotX = 0.0f;
+	static float cameraRotY = 0.0f;
+	static float camZoom = 0.0f;
+	if (GetKeyState('C') & 0x80) {
+
+		//Rotation
+		if (GetKeyState(VK_UP) & 0x80) {
+			cameraRotX += 0.005f;
+		}
+		if (GetKeyState(VK_DOWN) & 0x80) {
+			cameraRotX -= 0.005f;
+		}
+		if (GetKeyState(VK_RIGHT) & 0x80) {
+			cameraRotY -= 0.005f;
+		}
+		if (GetKeyState(VK_LEFT) & 0x80) {
+			cameraRotY += 0.005f;
+		}
+
+		//Zoom
+		if (GetKeyState('I') & 0x80) {
+			camZoom += 0.01f;
+		}
+		if (GetKeyState('O') & 0x80) {
+			camZoom -= 0.01f;
+		}
+	}
+
+
+	//cameraの移動変換行列
+	D3DXMATRIX camWorldMatrix, camRotXMatrix, camRotYMatrix, camZoomMatrix;
+	D3DXMatrixTranslation(&camZoomMatrix, 0, 0, camZoom);
+	D3DXMatrixRotationX(&camRotXMatrix, cameraRotX);
+	D3DXMatrixRotationY(&camRotYMatrix, cameraRotY);
+
+	camWorldMatrix = camZoomMatrix* camRotXMatrix * camRotYMatrix;
+
+
 	//ビュー行列
 	D3DXVECTOR3 cameraPos(0.0f, 0.0f, -5.0f);	//カメラ位置
+	D3DXVec3TransformCoord(&cameraPos, &cameraPos, &camWorldMatrix);
 	D3DXVECTOR3 lookAtPos(0.0f, 0.0f, 0.0f);	//注視位置
 	D3DXVECTOR3 upVec(0.0f, 1.0f, 0.0f);		//上方位置
+	//D3DXVec3TransformCoord(&upVec, &upVec, &camWorldMatrix);
 	D3DXMatrixLookAtLH(&m_ViewMatrix, &cameraPos, &lookAtPos, &upVec);
 
 
@@ -454,10 +498,10 @@ void App::OnRender()
 
 
 	//キーボードによる入力はとりあえずここで
-	//モデルのRotation
+	//オブジェクトのRotation
 	static float roll = 0.0f;
 	static float pitch = 0.0f;
-	if (GetKeyState(VK_SHIFT) & 0x80) {
+	if (GetKeyState('O') & 0x80) {
 		if (GetKeyState(VK_UP) & 0x80) {
 			pitch += 0.01f;
 		}
@@ -476,7 +520,7 @@ void App::OnRender()
 	//その他各種パラメータ変更
 	char str[60];
 
-	static D3DXVECTOR2 roughness(0.6f, 0.6f);
+	static D3DXVECTOR2 roughness(0.07f, 0.07f);
 	if (GetKeyState('R') & 0x80) {
 		if (GetKeyState(VK_RIGHT) & 0x80)
 		{
@@ -499,7 +543,7 @@ void App::OnRender()
 		SetWindowTextA(m_hWnd, str);
 	}
 
-	static D3DXVECTOR2 microRoughness(0.05f, 0.05f);
+	static D3DXVECTOR2 microRoughness(0.06f, 0.06f);
 	if (GetKeyState('M') & 0x80) {
 		if ((GetKeyState(VK_RIGHT) & 0x80) && (microRoughness.x < roughness.x))
 		{
@@ -521,7 +565,7 @@ void App::OnRender()
 		SetWindowTextA(m_hWnd, str);
 	}
 
-	static float variation = 100.0f;
+	static float variation = 0.1f;
 	if (GetKeyState('V') & 0x80) {
 		if (GetKeyState(VK_RIGHT) & 0x80)
 		{
@@ -535,8 +579,18 @@ void App::OnRender()
 		SetWindowTextA(m_hWnd, str);
 	}
 
-	static float density = 5.e8;
+	static float density = 1.5e5;
 	if (GetKeyState('D') & 0x80) {
+		if (GetKeyState(VK_UP) & 0x80)
+		{
+			density += 1.e5;
+		}
+		if (GetKeyState(VK_DOWN) & 0x80)
+		{
+			density -= 1.e5f;
+		}
+		sprintf(str, "density=%e", density);
+
 		if (GetKeyState(VK_RIGHT) & 0x80)
 		{
 			density += 1.e4;
@@ -546,16 +600,9 @@ void App::OnRender()
 			density -= 1.e4f;
 		}
 		sprintf(str, "density=%e", density);
+
 		SetWindowTextA(m_hWnd, str);
 	}
-	
-
-	//カメラ位置
-	//static POINT point;
-	//if (GetKeyState('C') & 0x80) {
-	//	GetCursorPos(&point);
-	//	ScreenToClient(m_hWnd, &point);
-	//}
 	
 
 	//モデルの回転行列
@@ -566,7 +613,6 @@ void App::OnRender()
 	D3DXMatrixScaling(&ScallMatrix, 1.0f / 150.0f, 1.0f / 150.0f, 1.0f / 150.0f);
 	WorldMatrix = ScallMatrix* RollMatrix * PitchMatrix;
 
-	
 
 	//シェーダーのコンスタントバッファーに各種データを渡す
 	ConstantBuffer cb;
@@ -583,12 +629,12 @@ void App::OnRender()
 
 		cb.lightPos = D3DXVECTOR3(0.0, 0.0f, -5.0f);
 		
-		//cb.mouse = D3DXVECTOR2(point.x, point.y) / 10.0;
-
 		cb.roughness = roughness;
 		cb.microRoughness = microRoughness;
 		cb.variation = variation;
 		cb.density = density;
+
+		cb.cameraPos = cameraPos;
 
 		memcpy_s(pData.pData, pData.RowPitch, (void*)(&cb), sizeof(cb));
 		m_pDeviceContext->Unmap(m_pConstantBuffer[DRAW_GLINT].Get(), 0);
@@ -605,7 +651,7 @@ void App::OnRender()
 	
 	
 	//プリミティブ・トポロジーをセット
-	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	//使用するシェーダーの登録	
 	m_pDeviceContext->VSSetShader(m_pVertexShader[DRAW_GLINT].Get(), nullptr, 0);

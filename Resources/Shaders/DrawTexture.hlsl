@@ -10,7 +10,7 @@ cbuffer CONSTANT_BUFFER :register(b0)
     float2 MicroRoughness   : packoffset(c10);
     float Variation         : packoffset(c11);
     float Density           : packoffset(c12);
-    //float2 Mouse          : packoffset(c5);
+    float CamPos            : packoffset(c13);
 };
 
 //------------------------------------------------------------------------------------------
@@ -428,7 +428,6 @@ float4 PS(VS_OUTPUT input) : SV_Target
     
 
     float3 L = normalize(LightPos);
-    float3 CamPos = float3(0.0f, 0.0f, -5.0f);
     float3 V = normalize(CamPos - pos);
 
     float3 dposdx = ddx(pos);
@@ -445,22 +444,20 @@ float4 PS(VS_OUTPUT input) : SV_Target
     float dif = clamp(dot(normal, L), 0.0, 1.0);
     float fre = 1.0 - pow(1.0 - dif, 2.5);
     float dfr = (1.0 - pow(1.0 - clamp(dot(normal, V), 0.0, 1.0), 2.5)) * fre;
-    float specularity = 2;
+    float specularity = 0.5 * dfr;
         
-    // configure multiscale material (snow parameters)
-    float2 roughness = float2(0.6, 0.6);
-    float2 microRoughness = roughness * 0.024;
+    // configure multiscale material
     float searchConeAngle = 0.01;
-    float variation = 100.0;
-    float dynamicRange = 50000.0;
-    float density = 5.e8;
+    float dynamicRange = 10.0;
 
-    float3 lightPower = float3(1, 1, 1)*2;
+    float3 lightPower = float3(1, 1, 1) * 2.0;
 
-    //float3 col = float3(0,1,0);
-    float3 col = lerp(float3(0.1, 0.2, 0.5), float3(0.95, 0.8, 0.75), (1.0 - abs(-V.y)) * dif);
+    float3 sky = float3(0.7, 0.9, 1.0) + 1.0 - V.y * 0.8;
+
+    float3 col = float3(0.5, 0.025, 0.025);
+    col = lerp(col, sky, 0.15 * pow(1.0 - dfr, 2.0));
            
-    //col *= lightPower * lerp(0.02, 1.0, dif);
+    col *= lightPower * lerp(0.02, 1.0, dif);
 
     if (specularity > 0.0 && dif > 0.0 && dot(V, normal) > 0.0)
     col += specularity * (glints(texCO, duvdx, duvdy, ctf, L, normal, V, Roughness, MicroRoughness, searchConeAngle, Variation, dynamicRange, Density))

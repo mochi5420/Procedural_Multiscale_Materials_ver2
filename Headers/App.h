@@ -31,8 +31,8 @@
 //------------------------------------------------------------------------------------------
 //	定数定義
 //------------------------------------------------------------------------------------------
-static const int WINDOW_WIDTH = 512;	//ウィンドウ幅
-static const int WINDOW_HEIGHT = 512;	//ウィンドウ高さ
+static const int WINDOW_WIDTH = 720;	//ウィンドウ幅
+static const int WINDOW_HEIGHT = 720;	//ウィンドウ高さ
 static const wchar_t* const APP_NAME = L"Window";	//Windowのタイトル
 static const int DRAW_GLINT = 0;
 //static const LPSTR OBJ_FILE = "Resources/Obj/chess.obj";
@@ -71,12 +71,16 @@ private:
 	{
 		ALIGN(16) D3DXMATRIX  WVP;
 		ALIGN(16) D3DXMATRIX  W;
+		ALIGN(16) D3DXVECTOR3  cameraPos;
 		ALIGN(16) D3DXVECTOR3  lightPos;
 		ALIGN(16) D3DXVECTOR2 roughness;
 		ALIGN(16) D3DXVECTOR2 microRoughness;
 		ALIGN(16) float variation;
 		ALIGN(16) float density;
-		ALIGN(16) D3DXVECTOR3  cameraPos;
+		ALIGN(16) float searchConeAngle;
+		ALIGN(16) float dynamicRange;
+		ALIGN(16) float glintsBrightness;
+		ALIGN(16) float shadingBribhtness;
 	};	
 		
 	//=============================================================================================

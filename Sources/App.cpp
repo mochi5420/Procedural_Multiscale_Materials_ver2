@@ -104,7 +104,7 @@ bool App::InitWindow()
 		APP_NAME,				// ウインドウクラス名 
 		APP_NAME,				// ウインドウのタイトル
 		WS_OVERLAPPEDWINDOW,	// ウインドウスタイル 
-		100, 100,				// ウインドウ表示位置 
+		150, 150,				// ウインドウ表示位置 
 		WINDOW_WIDTH, 			// ウインドウの大きさ 
 		WINDOW_HEIGHT,			// ウインドウの大きさ 
 		nullptr,				// 親ウインドウのハンドル 
@@ -248,6 +248,7 @@ bool App::InitD3D()
 	//		return false;
 	//	}
 	//}
+	
 
 	return true;
 }
@@ -498,7 +499,9 @@ void App::OnRender()
 
 
 	//キーボードによる入力はとりあえずここで
-	//オブジェクトのRotation
+	char str[60];
+
+	//ObjectのRotation
 	static float roll = 0.0f;
 	static float pitch = 0.0f;
 	if (GetKeyState('O') & 0x80) {
@@ -517,10 +520,28 @@ void App::OnRender()
 	}
 
 
-	//その他各種パラメータ変更
-	char str[60];
+	//LightのRotation
+	static float lightRotX = 0.0f;
+	static float lightRotY = 0.0f;
+	if (GetKeyState('L') & 0x80) {
 
-	static D3DXVECTOR2 roughness(0.07f, 0.07f);
+		if (GetKeyState(VK_UP) & 0x80) {
+			lightRotX += 0.005f;
+		}
+		if (GetKeyState(VK_DOWN) & 0x80) {
+			lightRotX -= 0.005f;
+		}
+		if (GetKeyState(VK_RIGHT) & 0x80) {
+			lightRotY -= 0.005f;
+		}
+		if (GetKeyState(VK_LEFT) & 0x80) {
+			lightRotY += 0.005f;
+		}
+	}
+
+
+	//Global Roughness
+	static D3DXVECTOR2 roughness(0.12f, 0.12f);
 	if (GetKeyState('R') & 0x80) {
 		if (GetKeyState(VK_RIGHT) & 0x80)
 		{
@@ -543,7 +564,8 @@ void App::OnRender()
 		SetWindowTextA(m_hWnd, str);
 	}
 
-	static D3DXVECTOR2 microRoughness(0.06f, 0.06f);
+	//Micro Roughness
+	static D3DXVECTOR2 microRoughness(0.1f, 0.001f);
 	if (GetKeyState('M') & 0x80) {
 		if ((GetKeyState(VK_RIGHT) & 0x80) && (microRoughness.x < roughness.x))
 		{
@@ -565,7 +587,8 @@ void App::OnRender()
 		SetWindowTextA(m_hWnd, str);
 	}
 
-	static float variation = 0.1f;
+	//Variation
+	static float variation = 0.0f;
 	if (GetKeyState('V') & 0x80) {
 		if (GetKeyState(VK_RIGHT) & 0x80)
 		{
@@ -579,39 +602,107 @@ void App::OnRender()
 		SetWindowTextA(m_hWnd, str);
 	}
 
-	static float density = 1.5e5;
+	//Density
+	static float density = 1.0e10;
+	static float exponet = 10.0f;
 	if (GetKeyState('D') & 0x80) {
 		if (GetKeyState(VK_UP) & 0x80)
 		{
-			density += 1.e5;
+			exponet += 0.1f;
 		}
 		if (GetKeyState(VK_DOWN) & 0x80)
 		{
-			density -= 1.e5f;
+			exponet -= 0.1f;
 		}
-		sprintf(str, "density=%e", density);
-
 		if (GetKeyState(VK_RIGHT) & 0x80)
 		{
-			density += 1.e4;
+			exponet += 0.01f;
 		}
 		if (GetKeyState(VK_LEFT) & 0x80)
 		{
-			density -= 1.e4f;
+			exponet-= 0.01f;
 		}
+
+		density = pow(10, exponet);
 		sprintf(str, "density=%e", density);
 
 		SetWindowTextA(m_hWnd, str);
 	}
 	
+	//searchConeAngle
+	static float searchConeAngle = 0.06f;
+	if (GetKeyState('S') & 0x80) {
+		if (GetKeyState(VK_RIGHT) & 0x80)
+		{
+			searchConeAngle += 0.001f;
+		}
+		if (GetKeyState(VK_LEFT) & 0x80)
+		{
+			searchConeAngle -= 0.001;
+		}
+		sprintf(str, "searchConeAngle=%f", searchConeAngle);
+		SetWindowTextA(m_hWnd, str);
+	}
 
-	//モデルの回転行列
+	//dynamicRange
+	static float dynamicRange = 10.0f;
+	if (GetKeyState('Q') & 0x80) {
+		if (GetKeyState(VK_RIGHT) & 0x80)
+		{
+			dynamicRange += 10.0f;
+		}
+		if (GetKeyState(VK_LEFT) & 0x80)
+		{
+			dynamicRange -= 10.0f;
+		}
+		sprintf(str, "dynamicRange=%f", dynamicRange);
+		SetWindowTextA(m_hWnd, str);
+	}
+
+	//glints Blightness & shading Blightness
+	static float glintsBrightness = 0.4f;
+	static float shadingBribhtness = 1.5f;
+	if (GetKeyState('B') & 0x80) {
+		if (GetKeyState(VK_UP) & 0x80)
+		{
+			shadingBribhtness += 0.1f;
+		}
+		if (GetKeyState(VK_DOWN) & 0x80)
+		{
+			shadingBribhtness -= 0.1f;
+		}
+		if (GetKeyState(VK_RIGHT) & 0x80)
+		{
+			glintsBrightness += 0.1f;
+		}
+		if (GetKeyState(VK_LEFT) & 0x80)
+		{
+			glintsBrightness -= 0.1f;
+		}
+
+		sprintf(str, "shadingBribhtness=%f / glintsBrightness=%f", shadingBribhtness, glintsBrightness);
+
+		SetWindowTextA(m_hWnd, str);
+	}
+
+	//モデルのWorld変換行列
 	D3DXMATRIX WorldMatrix, RollMatrix, PitchMatrix, ScallMatrix;
 	D3DXMatrixRotationX(&PitchMatrix, pitch);
 	D3DXMatrixRotationY(&RollMatrix, roll);
 	//D3DXMatrixScaling(&ScallMatrix, 2.0, 2.0f, 2.0f);
 	D3DXMatrixScaling(&ScallMatrix, 1.0f / 150.0f, 1.0f / 150.0f, 1.0f / 150.0f);
 	WorldMatrix = ScallMatrix* RollMatrix * PitchMatrix;
+
+
+	//LightのWorld変換行列
+	D3DXMATRIX lightWorldMatrix, lightRotXMatrix, lightRotYMatrix;
+	D3DXMatrixRotationX(&lightRotXMatrix, lightRotX);
+	D3DXMatrixRotationY(&lightRotYMatrix, lightRotY);
+	lightWorldMatrix = lightRotXMatrix * lightRotYMatrix;
+
+	D3DXVECTOR3 lightPos(0.0f, 0.0f, -5.0f);
+	D3DXVec3TransformCoord(&lightPos, &lightPos, &lightWorldMatrix);
+
 
 
 	//シェーダーのコンスタントバッファーに各種データを渡す
@@ -627,14 +718,18 @@ void App::OnRender()
 		cb.W = WorldMatrix;
 		D3DXMatrixTranspose(&cb.W, &cb.W);
 
-		cb.lightPos = D3DXVECTOR3(0.0, 0.0f, -5.0f);
-		
+		cb.cameraPos = cameraPos;
+		cb.lightPos = lightPos;
+
 		cb.roughness = roughness;
 		cb.microRoughness = microRoughness;
 		cb.variation = variation;
 		cb.density = density;
+		cb.searchConeAngle = searchConeAngle;
+		cb.dynamicRange = dynamicRange;
+		cb.glintsBrightness = glintsBrightness;
+		cb.shadingBribhtness = shadingBribhtness;
 
-		cb.cameraPos = cameraPos;
 
 		memcpy_s(pData.pData, pData.RowPitch, (void*)(&cb), sizeof(cb));
 		m_pDeviceContext->Unmap(m_pConstantBuffer[DRAW_GLINT].Get(), 0);

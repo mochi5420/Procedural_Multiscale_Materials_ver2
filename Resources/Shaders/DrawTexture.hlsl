@@ -5,12 +5,16 @@ cbuffer CONSTANT_BUFFER :register(b0)
 {
     matrix WVP              : packoffset(c0);
     matrix W                : packoffset(c4);
-    float3 LightPos         : packoffset(c8);
-    float2 Roughness        : packoffset(c9);
-    float2 MicroRoughness   : packoffset(c10);
-    float Variation         : packoffset(c11);
-    float Density           : packoffset(c12);
-    float CamPos            : packoffset(c13);
+    float3 CamPos           : packoffset(c8);
+    float3 LightPos         : packoffset(c9);
+    float2 Roughness        : packoffset(c10);
+    float2 MicroRoughness   : packoffset(c11);
+    float Variation         : packoffset(c12);
+    float Density           : packoffset(c13);
+    float SearchConeAngle   : packoffset(c14);
+    float DynamicRange      : packoffset(c15);
+    float GlintsBlightness  : packoffset(c16);
+    float ShadingBlightness : packoffset(c17);
 };
 
 //------------------------------------------------------------------------------------------
@@ -446,22 +450,17 @@ float4 PS(VS_OUTPUT input) : SV_Target
     float dfr = (1.0 - pow(1.0 - clamp(dot(normal, V), 0.0, 1.0), 2.5)) * fre;
     float specularity = 0.5 * dfr;
         
-    // configure multiscale material
-    float searchConeAngle = 0.01;
-    float dynamicRange = 10.0;
-
-    float3 lightPower = float3(1, 1, 1) * 2.0;
 
     float3 sky = float3(0.7, 0.9, 1.0) + 1.0 - V.y * 0.8;
 
     float3 col = float3(0.5, 0.025, 0.025);
     col = lerp(col, sky, 0.15 * pow(1.0 - dfr, 2.0));
            
-    col *= lightPower * lerp(0.02, 1.0, dif);
+    col *= ShadingBlightness * lerp(0.02, 1.0, dif);
 
     if (specularity > 0.0 && dif > 0.0 && dot(V, normal) > 0.0)
-    col += specularity * (glints(texCO, duvdx, duvdy, ctf, L, normal, V, Roughness, MicroRoughness, searchConeAngle, Variation, dynamicRange, Density))
-                    * lightPower; // * lerp(0.05, 1.0, occ);
+        col += specularity * (glints(texCO, duvdx, duvdy, ctf, L, normal, V, Roughness, MicroRoughness, SearchConeAngle, Variation, DynamicRange, Density))
+                    * GlintsBlightness; // * lerp(0.05, 1.0, occ);
 
     return float4(col, 1);
 }

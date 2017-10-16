@@ -35,8 +35,10 @@ static const int WINDOW_WIDTH = 720;	//ウィンドウ幅
 static const int WINDOW_HEIGHT = 720;	//ウィンドウ高さ
 static const wchar_t* const APP_NAME = L"Window";	//Windowのタイトル
 static const int DRAW_GLINT = 0;
+static const int DRAW_SKY = 1;
 //static const LPSTR OBJ_FILE = "Resources/Obj/chess.obj";
 static const LPSTR OBJ_FILE = "Resources/Obj/VWUP.obj";
+static const wchar_t* const CUBE_MAP = L"Resources/Textures/sunsetcube1024.dds";
 
 
 //------------------------------------------------------------------------------------------
@@ -63,11 +65,24 @@ private:
 		D3DXVECTOR3 Normal;
 	};
 
+	struct Vertex3
+	{
+		Vertex3() {}
+		Vertex3(float x, float y, float z,
+			float nx, float ny, float nz,
+			float u, float v)
+			: pos(x, y, z), normal(nx, ny, nz), texCoord(u, v) {}
+
+		D3DXVECTOR3 pos;
+		D3DXVECTOR3 normal;
+		D3DXVECTOR2 texCoord;
+	};
+
 
 	//=============================================================================================
 	//	コンスタントバッファ
 	//=============================================================================================
-	struct ConstantBuffer
+	struct ConstantBufferGlint
 	{
 		ALIGN(16) D3DXMATRIX  WVP;
 		ALIGN(16) D3DXMATRIX  W;
@@ -82,6 +97,14 @@ private:
 		ALIGN(16) float glintsBrightness;
 		ALIGN(16) float shadingBribhtness;
 	};	
+
+	struct ConstantBufferSky
+	{
+		ALIGN(16) D3DXMATRIX  WVP;
+		ALIGN(16) D3DXMATRIX  W;
+		ALIGN(16) D3DXVECTOR3  cameraPos;
+		ALIGN(16) D3DXVECTOR3  lightPos;
+	};
 		
 	//=============================================================================================
 	//	データ
@@ -94,16 +117,22 @@ private:
 	ComPtr<ID3D11RenderTargetView>	m_pRenderTargetView;
 	ComPtr<ID3D11DepthStencilView>	m_pDepthStencilView;
 	ComPtr<ID3D11Texture2D>			m_pDepthStencil;
-	ComPtr<ID3D11RasterizerState>	m_pRasterizerState;
+	ComPtr<ID3D11RasterizerState>	m_pRasterizerState[2];
 	ComPtr<ID3D11SamplerState>		m_pSamLinear;
-	ComPtr<ID3D11InputLayout>		m_pVertexLayout[1];
-	ComPtr<ID3D11VertexShader>		m_pVertexShader[1];
-	ComPtr<ID3D11PixelShader>		m_pPixelShader[1];
-	ComPtr<ID3D11Buffer>			m_pConstantBuffer[1];
-	ComPtr<ID3D11Buffer>			m_pVertexBuffer;	
-	ComPtr<ID3D11Buffer>            m_pIndexBuffer;
-	DWORD							NumFace;
+	ComPtr<ID3D11InputLayout>		m_pVertexLayout[2];
+	ComPtr<ID3D11VertexShader>		m_pVertexShader[2];
+	ComPtr<ID3D11PixelShader>		m_pPixelShader[2];
+	ComPtr<ID3D11Buffer>			m_pConstantBuffer[2];
+	ComPtr<ID3D11Buffer>			m_pVertexBuffer[2];	
+	ComPtr<ID3D11Buffer>            m_pIndexBuffer[2];
+	DWORD							NumFace[2];
 
+	//環境マップ
+	ComPtr<ID3D11Texture2D>			 m_pCubeMapTexture;
+	ComPtr<ID3D11ShaderResourceView> m_pCubeMapSRV;
+	ComPtr<ID3D11SamplerState>		 m_pCubeMapSamplerState;
+
+	//Matrix
 	D3DXMATRIX m_ViewMatrix;
 	D3DXMATRIX m_ProjectionMatrix;
 

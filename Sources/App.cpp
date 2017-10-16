@@ -3,6 +3,7 @@
 //------------------------------------------------------------------------------------------
 #include "App.h"
 #include "ObjMeshLoader.h"
+#include "Sphere.h"
 #include "FPS.h"
 
 
@@ -203,16 +204,18 @@ bool App::InitD3D()
 	rdc.FillMode = D3D11_FILL_SOLID;
 	rdc.FrontCounterClockwise = FALSE;
 
-	m_pDevice->CreateRasterizerState(&rdc, &m_pRasterizerState);
-	m_pDeviceContext->RSSetState(m_pRasterizerState.Get());
+	m_pDevice->CreateRasterizerState(&rdc, m_pRasterizerState[DRAW_GLINT].GetAddressOf());
+
+	rdc.CullMode = D3D11_CULL_NONE;
+	m_pDevice->CreateRasterizerState(&rdc, m_pRasterizerState[DRAW_SKY].GetAddressOf());
 
 
 	//Objの読み込み
 	{
 		ObjMeshLoader obj;
 
-		hr = obj.CreateMesh(m_pDevice.Get(), m_pVertexBuffer.GetAddressOf(),
-			m_pIndexBuffer.GetAddressOf(), NumFace, OBJ_FILE);
+		hr = obj.CreateMesh(m_pDevice.Get(), m_pVertexBuffer[DRAW_GLINT].GetAddressOf(),
+			m_pIndexBuffer[DRAW_GLINT].GetAddressOf(), NumFace[DRAW_GLINT], OBJ_FILE);
 
 		if (FAILED(hr))
 		{
@@ -248,7 +251,66 @@ bool App::InitD3D()
 	//		return false;
 	//	}
 	//}
-	
+
+
+	//環境マップの作成
+	//Tell D3D we will be loading a cube texture
+	D3DX11_IMAGE_LOAD_INFO loadinfo;
+	loadinfo.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+
+	//Load the texture
+	hr = D3DX11CreateTextureFromFile(m_pDevice.Get(), CUBE_MAP,
+		&loadinfo, 0, (ID3D11Resource**)m_pCubeMapTexture.GetAddressOf(), 0);
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	//Create the textures description
+	D3D11_TEXTURE2D_DESC tdesc;
+	m_pCubeMapTexture->GetDesc(&tdesc);
+
+	//Tell D3D We have a cube texture, which is an array of 2D textures
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvd;
+	srvd.Format = tdesc.Format;
+	srvd.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+	srvd.TextureCube.MipLevels = tdesc.MipLevels;
+	srvd.TextureCube.MostDetailedMip = 0;
+
+	//Create the Resource view
+	hr = m_pDevice->CreateShaderResourceView(m_pCubeMapTexture.Get(), &srvd, m_pCubeMapSRV.GetAddressOf());
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	//Describe the Sample State
+	D3D11_SAMPLER_DESC sampDesc;
+	ZeroMemory(&sampDesc, sizeof(sampDesc));
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	//Create the Sample State
+	hr = m_pDevice->CreateSamplerState(&sampDesc, m_pCubeMapSamplerState.GetAddressOf());
+
+	//Create Sky Sphere
+	{
+		Sphere sphere;
+
+		hr = sphere.CreateSphere(m_pDevice.Get(), m_pVertexBuffer[DRAW_SKY].GetAddressOf(),
+			m_pIndexBuffer[DRAW_SKY].GetAddressOf(), NumFace[DRAW_SKY], 10, 10);
+
+		if (FAILED(hr))
+		{
+			return false;
+		}
+	}
 
 	return true;
 }
@@ -270,6 +332,10 @@ bool App::InitShader()
 	Flag1 |= D3D10_SHADER_OPTIMIZATION_LEVEL3;
 #endif
 
+
+	// ---------------------------------------------------------------------
+	//DRAW_GLINT のシェーダーの初期化
+	// ---------------------------------------------------------------------	
 	//ブロブからDRAW_GLINTバーテックスシェーダー作成
 	hr = D3DX11CompileFromFile(
 			L"Resources/Shaders/DrawTexture.hlsl",
@@ -303,15 +369,15 @@ bool App::InitShader()
 
 
 	//DRAW_GLINTシェーダー用　頂点インプットレイアウトを作成
-	D3D11_INPUT_ELEMENT_DESC layout[] =
+	D3D11_INPUT_ELEMENT_DESC layoutGlint[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
-	int numElements = sizeof(layout) / sizeof(layout[0]);
+	int numElements = sizeof(layoutGlint) / sizeof(layoutGlint[0]);
 
 	hr = m_pDevice->CreateInputLayout(
-			layout,
+			layoutGlint,
 			numElements,
 			pCompiledShader->GetBufferPointer(),
 			pCompiledShader->GetBufferSize(),
@@ -358,7 +424,7 @@ bool App::InitShader()
 	//コンスタントバッファー作成
 	D3D11_BUFFER_DESC cbDesc;
 	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	cbDesc.ByteWidth = sizeof(ConstantBuffer);
+	cbDesc.ByteWidth = sizeof(ConstantBufferGlint);
 	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	cbDesc.MiscFlags = 0;
 	cbDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -370,6 +436,108 @@ bool App::InitShader()
 		return false;
 	}
 
+
+	// ---------------------------------------------------------------------
+	//DRAW_SKY　シェーダーの初期化
+	// ---------------------------------------------------------------------	
+	//ブロブからDRAW_SKYバーテックスシェーダー作成
+	hr = D3DX11CompileFromFile(
+		L"Resources/Shaders/DrawSky.hlsl",
+		nullptr,
+		nullptr,
+		"VS",
+		"vs_5_0",
+		Flag1,
+		0,
+		nullptr,
+		pCompiledShader.GetAddressOf(),
+		pErrors.GetAddressOf(),
+		nullptr);
+
+	if (FAILED(hr))
+	{
+		MessageBoxA(m_hWnd, (LPSTR)pErrors->GetBufferPointer(), nullptr, MB_OK);
+		return false;
+	}
+
+	hr = m_pDevice->CreateVertexShader(
+		pCompiledShader->GetBufferPointer(),
+		pCompiledShader->GetBufferSize(),
+		nullptr,
+		m_pVertexShader[DRAW_SKY].GetAddressOf());
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+
+	//DRAW_SKYシェーダー用　頂点インプットレイアウトを作成
+	D3D11_INPUT_ELEMENT_DESC layoutSky[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL",	0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+	numElements = sizeof(layoutSky) / sizeof(layoutSky[0]);
+
+	hr = m_pDevice->CreateInputLayout(
+		layoutSky,
+		numElements,
+		pCompiledShader->GetBufferPointer(),
+		pCompiledShader->GetBufferSize(),
+		m_pVertexLayout[DRAW_SKY].GetAddressOf());
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+
+	//ブロブからDRAW_SKYピクセルシェーダー作成
+	hr = D3DX11CompileFromFile(
+		L"Resources/Shaders/DrawSky.hlsl",
+		nullptr,
+		nullptr,
+		"PS",
+		"ps_5_0",
+		Flag1,
+		0,
+		nullptr,
+		pCompiledShader.GetAddressOf(),
+		pErrors.GetAddressOf(),
+		nullptr);
+
+	if (FAILED(hr))
+	{
+		MessageBoxA(m_hWnd, (LPSTR)pErrors->GetBufferPointer(), nullptr, MB_OK);
+		return false;
+	}
+
+	hr = m_pDevice->CreatePixelShader(
+		pCompiledShader->GetBufferPointer(),
+		pCompiledShader->GetBufferSize(),
+		nullptr,
+		m_pPixelShader[DRAW_SKY].GetAddressOf());
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	//コンスタントバッファー作成
+	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbDesc.ByteWidth = sizeof(ConstantBufferSky);
+	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	cbDesc.MiscFlags = 0;
+	cbDesc.Usage = D3D11_USAGE_DYNAMIC;
+
+	hr = m_pDevice->CreateBuffer(&cbDesc, nullptr, &m_pConstantBuffer[DRAW_SKY]);
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
 
 	return true;
 }
@@ -398,8 +566,7 @@ void App::MainLoop()
 			OnRender();
 			fps.COUNTER(m_hWnd);
 		}
-	}
-	
+	}	
 }
 
 
@@ -450,7 +617,7 @@ void App::OnRender()
 	//ビュー行列
 	D3DXVECTOR3 cameraPos(0.0f, 0.0f, -5.0f);	//カメラ位置
 	D3DXVec3TransformCoord(&cameraPos, &cameraPos, &camWorldMatrix);
-	D3DXVECTOR3 lookAtPos(0.0f, 0.0f, 0.0f);	//注視位置
+	D3DXVECTOR3 lookAtPos(0.0f, 0.25f, 0.0f);	//注視位置
 	D3DXVECTOR3 upVec(0.0f, 1.0f, 0.0f);		//上方位置
 	//D3DXVec3TransformCoord(&upVec, &upVec, &camWorldMatrix);
 	D3DXMatrixLookAtLH(&m_ViewMatrix, &cameraPos, &lookAtPos, &upVec);
@@ -479,23 +646,15 @@ void App::OnRender()
 	m_pDeviceContext->RSSetViewports(1, &vp);
 
 
+	//------------------------------------------------------------------------------------------
+	//	Draw Object
+	//------------------------------------------------------------------------------------------
+
 	//レンダーターゲットビューと深度ステンシルビューをパイプラインにバインド
 	m_pDeviceContext->OMSetRenderTargets(1, m_pRenderTargetView.GetAddressOf(), m_pDepthStencilView.Get());
 
 	m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView.Get(), ClearColor);	//画面クリア
 	m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);	//深度バッファクリア
-
-
-	//バーテックスバッファーをセット
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
-	m_pDeviceContext->IASetVertexBuffers(0, 1, m_pVertexBuffer.GetAddressOf(), &stride, &offset);
-
-
-	//インデックスバッファーをセット
-	stride = sizeof(int);
-	offset = 0;
-	m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
 
 	//キーボードによる入力はとりあえずここで
@@ -592,11 +751,11 @@ void App::OnRender()
 	if (GetKeyState('V') & 0x80) {
 		if (GetKeyState(VK_RIGHT) & 0x80)
 		{
-			variation += 1.0f;
+			variation += 0.1f;
 		}
 		if (GetKeyState(VK_LEFT) & 0x80)
 		{
-			variation -= 1.0f;
+			variation -= 0.1f;
 		}
 		sprintf(str, "variation=%f", variation);
 		SetWindowTextA(m_hWnd, str);
@@ -704,38 +863,47 @@ void App::OnRender()
 	D3DXVec3TransformCoord(&lightPos, &lightPos, &lightWorldMatrix);
 
 
-
 	//シェーダーのコンスタントバッファーに各種データを渡す
-	ConstantBuffer cb;
+	ConstantBufferGlint cbg;
 	D3D11_MAPPED_SUBRESOURCE pData;
 
 	if (SUCCEEDED(m_pDeviceContext->Map(m_pConstantBuffer[DRAW_GLINT].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &pData)))
 	{
 		//WVP行列をシェーダーに渡す
-		cb.WVP = WorldMatrix * m_ViewMatrix*m_ProjectionMatrix;
-		D3DXMatrixTranspose(&cb.WVP, &cb.WVP);
+		cbg.WVP = WorldMatrix * m_ViewMatrix*m_ProjectionMatrix;
+		D3DXMatrixTranspose(&cbg.WVP, &cbg.WVP);
 
-		cb.W = WorldMatrix;
-		D3DXMatrixTranspose(&cb.W, &cb.W);
+		cbg.W = WorldMatrix;
+		D3DXMatrixTranspose(&cbg.W, &cbg.W);
 
-		cb.cameraPos = cameraPos;
-		cb.lightPos = lightPos;
+		cbg.cameraPos = cameraPos;
+		cbg.lightPos = lightPos;
+		  
+		cbg.roughness = roughness;
+		cbg.microRoughness = microRoughness;
+		cbg.variation = variation;
+		cbg.density = density;
+		cbg.searchConeAngle = searchConeAngle;
+		cbg.dynamicRange = dynamicRange;
+		cbg.glintsBrightness = glintsBrightness;
+		cbg.shadingBribhtness = shadingBribhtness;
 
-		cb.roughness = roughness;
-		cb.microRoughness = microRoughness;
-		cb.variation = variation;
-		cb.density = density;
-		cb.searchConeAngle = searchConeAngle;
-		cb.dynamicRange = dynamicRange;
-		cb.glintsBrightness = glintsBrightness;
-		cb.shadingBribhtness = shadingBribhtness;
 
-
-		memcpy_s(pData.pData, pData.RowPitch, (void*)(&cb), sizeof(cb));
+		memcpy_s(pData.pData, pData.RowPitch, (void*)(&cbg), sizeof(cbg));
 		m_pDeviceContext->Unmap(m_pConstantBuffer[DRAW_GLINT].Get(), 0);
 	}
 
-	
+	//バーテックスバッファーをセット
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+	m_pDeviceContext->IASetVertexBuffers(0, 1, m_pVertexBuffer[DRAW_GLINT].GetAddressOf(), &stride, &offset);
+
+
+	//インデックスバッファーをセット
+	stride = sizeof(int);
+	m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer[DRAW_GLINT].Get(), DXGI_FORMAT_R32_UINT, 0);
+
+
 	//このコンスタントバッファーを使うシェーダーの登録
 	m_pDeviceContext->VSSetConstantBuffers(0, 1, m_pConstantBuffer[DRAW_GLINT].GetAddressOf());
 	m_pDeviceContext->PSSetConstantBuffers(0, 1, m_pConstantBuffer[DRAW_GLINT].GetAddressOf());
@@ -748,14 +916,84 @@ void App::OnRender()
 	//プリミティブ・トポロジーをセット
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+	//ラスタライザーのセット
+	m_pDeviceContext->RSSetState(m_pRasterizerState[DRAW_GLINT].Get());
+
 	//使用するシェーダーの登録	
 	m_pDeviceContext->VSSetShader(m_pVertexShader[DRAW_GLINT].Get(), nullptr, 0);
 	m_pDeviceContext->PSSetShader(m_pPixelShader[DRAW_GLINT].Get(), nullptr, 0);
 	
 	
+	//環境マップをセット
+	m_pDeviceContext->PSSetShaderResources(0, 1, m_pCubeMapSRV.GetAddressOf());
+	m_pDeviceContext->PSSetSamplers(0, 1, m_pCubeMapSamplerState.GetAddressOf());
+
 	//プリミティブをレンダリング
-	m_pDeviceContext->DrawIndexed(NumFace * 3, 0, 0);
+	m_pDeviceContext->DrawIndexed(NumFace[DRAW_GLINT] * 3, 0, 0);
 	//m_pDeviceContext->Draw(4, 0);		//Debugで使う板ポリ用
+
+
+	//------------------------------------------------------------------------------------------
+	//	Draw Sky
+	//------------------------------------------------------------------------------------------
+	//モデルのWorld変換行列
+	D3DXMatrixScaling(&ScallMatrix, 20.0, 20.0f, 20.0f);
+	//D3DXMatrixScaling(&ScallMatrix, 1.0f / 150.0f, 1.0f / 150.0f, 1.0f / 150.0f);
+	WorldMatrix = ScallMatrix* RollMatrix * PitchMatrix;
+	
+	//シェーダーのコンスタントバッファーに各種データを渡す
+	ConstantBufferSky cbs;
+
+	if (SUCCEEDED(m_pDeviceContext->Map(m_pConstantBuffer[DRAW_SKY].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &pData)))
+	{
+		//WVP行列をシェーダーに渡す
+		cbs.WVP = WorldMatrix * m_ViewMatrix*m_ProjectionMatrix;
+		D3DXMatrixTranspose(&cbs.WVP, &cbs.WVP);
+
+		cbs.W = WorldMatrix;
+		D3DXMatrixTranspose(&cbs.W, &cbs.W);
+
+		cbs.cameraPos = cameraPos;
+		cbs.lightPos = lightPos;
+		
+		memcpy_s(pData.pData, pData.RowPitch, (void*)(&cbs), sizeof(cbs));
+		m_pDeviceContext->Unmap(m_pConstantBuffer[DRAW_SKY].Get(), 0);
+	}
+
+	//バーテックスバッファーをセット
+	stride = sizeof(Vertex3);
+	m_pDeviceContext->IASetVertexBuffers(0, 1, m_pVertexBuffer[DRAW_SKY].GetAddressOf(), &stride, &offset);
+
+
+	//インデックスバッファーをセット
+	m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer[DRAW_SKY].Get(), DXGI_FORMAT_R32_UINT, 0);
+
+
+	//このコンスタントバッファーを使うシェーダーの登録
+	m_pDeviceContext->VSSetConstantBuffers(0, 1, m_pConstantBuffer[DRAW_SKY].GetAddressOf());
+	m_pDeviceContext->PSSetConstantBuffers(0, 1, m_pConstantBuffer[DRAW_SKY].GetAddressOf());
+
+
+	//頂点インプットレイアウトをセット
+	m_pDeviceContext->IASetInputLayout(m_pVertexLayout[DRAW_SKY].Get());
+
+
+	//プリミティブ・トポロジーをセット
+	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	//ラスタライザーのセット
+	m_pDeviceContext->RSSetState(m_pRasterizerState[DRAW_SKY].Get());
+
+	//使用するシェーダーの登録	
+	m_pDeviceContext->VSSetShader(m_pVertexShader[DRAW_SKY].Get(), nullptr, 0);
+	m_pDeviceContext->PSSetShader(m_pPixelShader[DRAW_SKY].Get(), nullptr, 0);
+
+	//テクスチャをセット（環境マップと同じ）
+	m_pDeviceContext->PSSetShaderResources(0, 1, m_pCubeMapSRV.GetAddressOf());
+	m_pDeviceContext->PSSetSamplers(0, 1, m_pCubeMapSamplerState.GetAddressOf());
+
+	//プリミティブをレンダリング
+	m_pDeviceContext->DrawIndexed(NumFace[DRAW_SKY] * 3, 0, 0);
 
 	m_pSwapChain->Present(0, 0);	//画面更新（バックバッファをフロントバッファに）	
 }

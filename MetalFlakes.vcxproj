@@ -23,14 +23,22 @@
     <ClCompile Include="Sources\FPS.cpp" />
     <ClCompile Include="Sources\Main.cpp" />
     <ClCompile Include="Sources\ObjMeshLoader.cpp" />
+    <ClCompile Include="Sources\Sphere.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Headers\App.h" />
     <ClInclude Include="Headers\Debug.h" />
     <ClInclude Include="Headers\FPS.h" />
     <ClInclude Include="Headers\ObjMeshLoader.h" />
+    <ClInclude Include="Headers\Sphere.h" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Resources\Shaders\DrawSky.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Effect</ShaderType>
+    </FxCompile>
     <FxCompile Include="Resources\Shaders\DrawTexture.hlsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

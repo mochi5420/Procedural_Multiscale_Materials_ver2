@@ -17,6 +17,11 @@ cbuffer CONSTANT_BUFFER :register(b0)
     float ShadingBlightness : packoffset(c17);
 };
 
+
+SamplerState CubeMapSamplerState;
+TextureCube CubeMap;
+
+
 //------------------------------------------------------------------------------------------
 //	Structure
 //------------------------------------------------------------------------------------------
@@ -433,6 +438,7 @@ float4 PS(VS_OUTPUT input) : SV_Target
 
     float3 L = normalize(LightPos);
     float3 V = normalize(CamPos - pos);
+    float3 R = normalize(reflect(-V, normal));
 
     float3 dposdx = ddx(pos);
     float3 dposdy = ddy(pos);
@@ -461,6 +467,10 @@ float4 PS(VS_OUTPUT input) : SV_Target
     if (specularity > 0.0 && dif > 0.0 && dot(V, normal) > 0.0)
         col += specularity * (glints(texCO, duvdx, duvdy, ctf, L, normal, V, Roughness, MicroRoughness, SearchConeAngle, Variation, DynamicRange, Density))
                     * GlintsBlightness; // * lerp(0.05, 1.0, occ);
+
+    float alpha = 0.7;
+
+    col = alpha * col + (1.0 - alpha) * CubeMap.Sample(CubeMapSamplerState, R).xyz;
 
     return float4(col, 1);
 }

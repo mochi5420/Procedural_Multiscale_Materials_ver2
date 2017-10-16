@@ -55,36 +55,37 @@ c:\program files (x86)\microsoft directx sdk (june 2010)\include\d3d10.h(608): w
   C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\shared\winerror.h(52771): note: 'D3D10_ERROR_TOO_MANY_UNIQUE_STATE_OBJECTS' の以前の定義を確認してください
 c:\program files (x86)\microsoft directx sdk (june 2010)\include\d3d10.h(609): warning C4005: 'D3D10_ERROR_FILE_NOT_FOUND': マクロが再定義されました。
   C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\shared\winerror.h(52780): note: 'D3D10_ERROR_FILE_NOT_FOUND' の以前の定義を確認してください
-D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(75): warning C4324: 'App::ConstantBuffer': アラインメント指定子のために構造体がパッドされました
-D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(76): warning C4324: 'App::ConstantBuffer': アラインメント指定子のために構造体がパッドされました
-D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(77): warning C4324: 'App::ConstantBuffer': アラインメント指定子のために構造体がパッドされました
-D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(78): warning C4324: 'App::ConstantBuffer': アラインメント指定子のために構造体がパッドされました
-D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(79): warning C4324: 'App::ConstantBuffer': アラインメント指定子のために構造体がパッドされました
-D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(80): warning C4324: 'App::ConstantBuffer': アラインメント指定子のために構造体がパッドされました
-D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(81): warning C4324: 'App::ConstantBuffer': アラインメント指定子のために構造体がパッドされました
-D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(82): warning C4324: 'App::ConstantBuffer': アラインメント指定子のために構造体がパッドされました
-D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(83): warning C4324: 'App::ConstantBuffer': アラインメント指定子のために構造体がパッドされました
-Sources\App.cpp(118): warning C4305: 'return': 'HRESULT' から 'bool' へ切り詰めます。
-Sources\App.cpp(467): warning C4838: 'double' から 'float' への変換には縮小変換が必要です
-Sources\App.cpp(467): warning C4305: '初期化中': 'double' から 'float' へ切り詰めます。
-Sources\App.cpp(626): warning C4244: '=': 'double' から 'float' への変換です。データが失われる可能性があります。
-Sources\App.cpp(641): warning C4305: '-=': 'double' から 'float' へ切り詰めます。
-Sources\App.cpp(563): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(90): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
+D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(91): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
+D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(92): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
+D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(93): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
+D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(94): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
+D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(95): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
+D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(96): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
+D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(97): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
+D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(98): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
+D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(106): warning C4324: 'App::ConstantBufferSky': アラインメント指定子のために構造体がパッドされました
+Sources\App.cpp(119): warning C4305: 'return': 'HRESULT' から 'bool' へ切り詰めます。
+Sources\App.cpp(634): warning C4838: 'double' から 'float' への変換には縮小変換が必要です
+Sources\App.cpp(634): warning C4305: '初期化中': 'double' から 'float' へ切り詰めます。
+Sources\App.cpp(785): warning C4244: '=': 'double' から 'float' への変換です。データが失われる可能性があります。
+Sources\App.cpp(800): warning C4305: '-=': 'double' から 'float' へ切り詰めます。
+Sources\App.cpp(722): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\ucrt\stdio.h(1769): note: 'sprintf' の宣言を確認してください
-Sources\App.cpp(586): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+Sources\App.cpp(745): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\ucrt\stdio.h(1769): note: 'sprintf' の宣言を確認してください
-Sources\App.cpp(601): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+Sources\App.cpp(760): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\ucrt\stdio.h(1769): note: 'sprintf' の宣言を確認してください
-Sources\App.cpp(627): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+Sources\App.cpp(786): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\ucrt\stdio.h(1769): note: 'sprintf' の宣言を確認してください
-Sources\App.cpp(643): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+Sources\App.cpp(802): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\ucrt\stdio.h(1769): note: 'sprintf' の宣言を確認してください
-Sources\App.cpp(658): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+Sources\App.cpp(817): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\ucrt\stdio.h(1769): note: 'sprintf' の宣言を確認してください
-Sources\App.cpp(683): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+Sources\App.cpp(842): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\ucrt\stdio.h(1769): note: 'sprintf' の宣言を確認してください
   コード生成しています。
-  2 of 575 functions ( 0.3%) were compiled, the rest were copied from previous compilation.
+  3 of 663 functions ( 0.5%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     2 functions had inline decision re-evaluated but remain unchanged
   コード生成が終了しました。

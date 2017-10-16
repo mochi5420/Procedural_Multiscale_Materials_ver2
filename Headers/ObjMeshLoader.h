@@ -44,8 +44,7 @@ private:
 	//=============================================================================================
 	struct Triplet {
 		Triplet(unsigned int a_ = 0u, unsigned int b_ = 0u, unsigned int c_ = 0u)
-			: a(a_), b(b_), c(c_) {
-		}
+			: a(a_), b(b_), c(c_) {}
 		unsigned int a, b, c;
 	};
 

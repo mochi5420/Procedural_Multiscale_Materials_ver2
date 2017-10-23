@@ -5,6 +5,25 @@
 #include "ObjMeshLoader.h"
 #include "Sphere.h"
 #include "FPS.h"
+#include <vector>
+#include <AntTweakBar.h>
+
+//------------------------------------------------------------------------------------------
+//	global variables
+//------------------------------------------------------------------------------------------
+D3DXVECTOR3 g_LightDir(-2.82f, 2.24f, 3.35f);
+D3DXQUATERNION g_ObjRotation;
+float g_ObjScale = 1.0f / 200.0f;
+
+D3DXVECTOR2 g_Roughness(0.25f, 0.25f);	//Global Roughness
+D3DXVECTOR2 g_MicroRoughness(0.02f, 0.02f);	//Micro Roughness
+float g_Variation = 860.0f;	//Variation
+float g_Density = 13.0f;	//Density
+float g_SearchConeAngle = 0.01f; 	//SearchConeAngle
+float g_DynamicRange = 10.0f;	//dynamicRange
+float g_GlintsBrightness = 2.0f;
+float g_ShadingBribhtness = 7.0f;
+
 
 //------------------------------------------------------------------------------------------
 //	constructor & destructor
@@ -33,12 +52,19 @@ int App::Run()
 		return 0;
 	}
 	
+	if (FAILED(InitAntTweakBar()))	//Initialize AntTweakBar
+	{
+		return 0;
+	}
+
 	if (FAILED(InitShader()))	//Initialize Shader
 	{
 		return 0;
 	}
 
 	MainLoop();	//メインループへ
+
+	TwTerminate();	//AntTweakBarの終了
 
 	return 0;	//アプリ終了
 }
@@ -47,27 +73,64 @@ int App::Run()
 //------------------------------------------------------------------------------------------
 //	ウィンドウプロシージャー
 //------------------------------------------------------------------------------------------
-LRESULT CALLBACK App::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT App::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	// Send event message to AntTweakBar
+	if (TwEventWin(hWnd, uMsg, wParam, lParam))
+	{
+		return 0; // Event has been handled by AntTweakBar
+
+	}
+
 	switch (uMsg)
 	{
-	case WM_KEYDOWN:
-	{
-		switch ((char)wParam)
+		case WM_SIZE: // Window size has been changed
 		{
-		case VK_ESCAPE:	//ESCキーで修了
-			PostQuitMessage(0);
+			ResizeWindow(lParam);
 			break;
 		}
+		case WM_KEYDOWN:
+		{
+			switch ((char)wParam)
+			{
+				case VK_ESCAPE:	//ESCキーで修了
+					PostQuitMessage(0);
+					break;
+			}
 
-		break;
-	}
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		break;
+			break;
+		}
+		case WM_DESTROY:
+		{
+			PostQuitMessage(0);
+			break;
+
+		}
 	}
 
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
+}
+
+LRESULT CALLBACK App::WndProcWrapper(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	//staticな関数からメンバを呼ぶことはできない。
+	
+	//ここで元々のプロシージアのアドレスを取得する。
+	App* instance = reinterpret_cast<App*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+
+	if (!instance) {//取得できなかった場合（まだ作りたてである）
+		if (message == WM_CREATE) {
+			// Save the DXSample* passed in to CreateWindow.
+			LPCREATESTRUCT pCreateStruct = reinterpret_cast<LPCREATESTRUCT>(lParam);
+			SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pCreateStruct->lpCreateParams));
+			
+		}
+	}
+	else {//取得できた場合（もう作った後）
+		LRESULT ret = instance->WndProc(hWnd, message, wParam, lParam);
+		return ret;
+	}
+	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
 
@@ -88,7 +151,7 @@ bool App::InitWindow()
 	SecureZeroMemory(&wc, sizeof(wc));
 	wc.cbSize			= sizeof(WNDCLASSEX);					// 構造体の大きさ
 	wc.style			= CS_HREDRAW | CS_VREDRAW;				// スタイル 
-	wc.lpfnWndProc		= WndProc;								// メッセージ処理関数
+	wc.lpfnWndProc		= WndProcWrapper;						// メッセージ処理関数
 	wc.hInstance		= hInst;								// プログラムのハンドル
 	wc.hIcon			= LoadIcon(nullptr, IDI_APPLICATION);	// アイコン
 	wc.hCursor			= LoadCursor(nullptr, IDC_ARROW);		// カーソル
@@ -100,17 +163,19 @@ bool App::InitWindow()
 	RegisterClassEx(&wc);	//ウインドウクラスを登録
 
 	// ウィンドウの作成
+	RECT rc = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
+	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 	m_hWnd = CreateWindow(
-		APP_NAME,				// ウインドウクラス名 
-		APP_NAME,				// ウインドウのタイトル
-		WS_OVERLAPPEDWINDOW,	// ウインドウスタイル 
-		150, 150,				// ウインドウ表示位置 
-		WINDOW_WIDTH, 			// ウインドウの大きさ 
-		WINDOW_HEIGHT,			// ウインドウの大きさ 
-		nullptr,				// 親ウインドウのハンドル 
-		nullptr,				// メニューのハンドル 
-		hInst,					// インスタンスのハンドル
-		nullptr);				// 作成時の引数保存用ポインタ 
+		APP_NAME,						// ウインドウクラス名 
+		APP_NAME,						// ウインドウのタイトル
+		WS_OVERLAPPEDWINDOW,			// ウインドウスタイル 
+		CW_USEDEFAULT, CW_USEDEFAULT,	// ウインドウ表示位置 
+		rc.right - rc.left, 			// ウインドウの大きさ 
+		rc.bottom - rc.top,				// ウインドウの大きさ 
+		nullptr,						// 親ウインドウのハンドル 
+		nullptr,						// メニューのハンドル 
+		hInst,							// インスタンスのハンドル
+		this);							// 作成時の引数保存用ポインタ 
 
 	// エラーチェック
 	if (!m_hWnd)
@@ -126,6 +191,40 @@ bool App::InitWindow()
 }
 
 
+bool App::InitAntTweakBar() {
+
+	// Initialize AntTweakBar
+	if (!TwInit(TW_DIRECT3D11, m_pDevice.Get()))
+	{
+		return false;
+	}
+
+	// Create a tweak bar
+	TwBar *bar = TwNewBar("TweakBar");
+	TwDefine(" TweakBar label='Glints UI' ");
+	TwDefine(" GLOBAL help='Real-time Rendering of Procedural Multiscale Materials (2016)' "); // Message added to the help bar.
+	TwDefine(" TweakBar size='300 400' color='41 126 231' alpha=0"); // change default tweak bar size and color
+	TwDefine(" GLOBAL fontsize=2 ");
+	TwDefine(" TweakBar valueswidth=130 "); // column width fits content
+
+	// Add variables to the tweak bar
+	TwAddVarRW(bar, "Global Roughness U", TW_TYPE_FLOAT, &g_Roughness.x, "min=0 max=1 step=0.001 group=Paramaters ");
+	TwAddVarRW(bar, "Global Roughness V", TW_TYPE_FLOAT, &g_Roughness.y, "min=0 max=1 step=0.001 group=Paramaters ");
+	TwAddVarRW(bar, "Micro Roughness U", TW_TYPE_FLOAT, &g_MicroRoughness.x, "min=0 max=1 step=0.001 group=Paramaters ");
+	TwAddVarRW(bar, "Micro Roughness V", TW_TYPE_FLOAT, &g_MicroRoughness.y, "min=0 max=1 step=0.001 group=Paramaters ");
+	TwAddVarRW(bar, "Variation", TW_TYPE_FLOAT, &g_Variation, "min=0 max=10000 keyincr=V keydecr=v group=Paramaters ");
+	TwAddVarRW(bar, "Log Density", TW_TYPE_FLOAT, &g_Density, "min=0 max=20 step=0.01 keyincr=D keydecr=d group=Paramaters ");
+	TwAddVarRW(bar, "Search Cone Angle", TW_TYPE_FLOAT, &g_SearchConeAngle, "min=0 max=1 step=0.001 keyincr=S keydecr=s group=Paramaters ");
+	TwAddVarRW(bar, "Dynamic Range", TW_TYPE_FLOAT, &g_DynamicRange, "min=0 max=10000 step=10.0 group=Paramaters ");
+	TwAddVarRW(bar, "Shading Bribhtness", TW_TYPE_FLOAT, &g_ShadingBribhtness, "min=0 max=100 step=0.1 group=Paramaters ");
+	TwAddVarRW(bar, "Glints Brightness", TW_TYPE_FLOAT, &g_GlintsBrightness, "min=0 max=100 step=0.1 group=Paramaters ");
+
+	TwAddVarRW(bar, "Light direction", TW_TYPE_DIR3F, &g_LightDir, "opened=true axisz=-z showval=false");
+	TwAddVarRW(bar, "Rotation", TW_TYPE_QUAT4F, &g_ObjRotation, "opened=true axisz=-z group=Object ");
+	TwAddVarRW(bar, "Scale", TW_TYPE_FLOAT, &g_ObjScale, "min=0.0 max=100.0 step=0.001 group=Object ");
+
+}
+
 //------------------------------------------------------------------------------------------
 //	Initializes Direct3D
 //------------------------------------------------------------------------------------------
@@ -133,12 +232,18 @@ bool App::InitD3D()
 {
 	HRESULT hr = S_OK;
 
+	// Get window size
+	RECT rc;
+	GetClientRect(m_hWnd, &rc);
+	UINT width = rc.right - rc.left;
+	UINT height = rc.bottom - rc.top;
+
 	// デバイスとスワップチェーンの作成
 	DXGI_SWAP_CHAIN_DESC sd;
 	SecureZeroMemory(&sd, sizeof(sd)); //初期化
 	sd.BufferCount							= 1;
-	sd.BufferDesc.Width						= WINDOW_WIDTH;						//サイズ指定
-	sd.BufferDesc.Height					= WINDOW_HEIGHT;					//サイズ指定
+	sd.BufferDesc.Width						= width;							//サイズ指定
+	sd.BufferDesc.Height					= height;							//サイズ指定
 	sd.BufferDesc.Format					= DXGI_FORMAT_R8G8B8A8_UNORM;		//32bit color
 	sd.BufferDesc.RefreshRate.Numerator		= 60;								//リフレッシュレート
 	sd.BufferDesc.RefreshRate.Denominator	= 1;								//バックバッファの数
@@ -180,8 +285,8 @@ bool App::InitD3D()
 	//深度ステンシルビューの作成
 	D3D11_TEXTURE2D_DESC descDepth;
 	SecureZeroMemory(&descDepth, sizeof(descDepth));
-	descDepth.Width					= WINDOW_WIDTH;
-	descDepth.Height				= WINDOW_HEIGHT;
+	descDepth.Width					= width;
+	descDepth.Height				= height;
 	descDepth.MipLevels				= 1;
 	descDepth.ArraySize				= 1;
 	descDepth.Format				= DXGI_FORMAT_D32_FLOAT;
@@ -541,6 +646,90 @@ bool App::InitShader()
 	return true;
 }
 
+
+//------------------------------------------------------------------------------------------
+//	ウィンドウサイズが変わった時の処理
+//------------------------------------------------------------------------------------------
+void App::ResizeWindow(LPARAM lParam)
+{
+
+	if (m_pDevice.Get()) // Resize D3D render target
+	{
+		// Release render target and depth-stencil view
+		ID3D11RenderTargetView *nullRTV = NULL;
+		m_pDeviceContext->OMSetRenderTargets(1, &nullRTV, NULL);
+		if (m_pRenderTargetView.Get())
+		{
+			m_pRenderTargetView.Reset();
+			m_pRenderTargetView = nullptr;
+		}
+		if (m_pDepthStencilView.Get())
+		{
+			m_pDepthStencilView.Reset();
+			m_pDepthStencilView = nullptr;
+		}
+
+		if (m_pSwapChain.Get())
+		{
+			// Resize swap chain
+			DXGI_SWAP_CHAIN_DESC sd;
+			SecureZeroMemory(&sd, sizeof(sd));
+			sd.BufferCount = 1;
+			sd.BufferDesc.Width = LOWORD(lParam);				
+			sd.BufferDesc.Height = HIWORD(lParam);				
+			sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;	
+			sd.BufferDesc.RefreshRate.Numerator = 60;			
+			sd.BufferDesc.RefreshRate.Denominator = 1;			
+			sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+			sd.OutputWindow = m_hWnd;
+			sd.SampleDesc.Count = 1;
+			sd.SampleDesc.Quality = 0;
+			sd.Windowed = TRUE;							
+
+			m_pSwapChain->ResizeBuffers(sd.BufferCount, sd.BufferDesc.Width,
+										sd.BufferDesc.Height, sd.BufferDesc.Format,
+										sd.Flags);
+
+			// Re-create a render target and depth-stencil view
+			ID3D11Texture2D *backBuffer = NULL, *dsBuffer = NULL;
+			m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBuffer);
+			m_pDevice->CreateRenderTargetView(backBuffer, NULL, m_pRenderTargetView.GetAddressOf());
+			backBuffer->Release();
+
+			D3D11_TEXTURE2D_DESC descDepth;
+			SecureZeroMemory(&descDepth, sizeof(descDepth));
+			descDepth.Width = sd.BufferDesc.Width;
+			descDepth.Height = sd.BufferDesc.Height;
+			descDepth.MipLevels = 1;
+			descDepth.ArraySize = 1;
+			descDepth.Format = DXGI_FORMAT_D32_FLOAT;
+			descDepth.SampleDesc.Count = 1;
+			descDepth.SampleDesc.Quality = 0;
+			descDepth.Usage = D3D11_USAGE_DEFAULT;
+			descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+			descDepth.CPUAccessFlags = 0;
+			descDepth.MiscFlags = 0;
+
+			m_pDevice->CreateTexture2D(&descDepth, NULL, &dsBuffer);
+			m_pDevice->CreateDepthStencilView(dsBuffer, NULL, m_pDepthStencilView.GetAddressOf());
+			dsBuffer->Release();
+			m_pDeviceContext->OMSetRenderTargets(1, m_pRenderTargetView.GetAddressOf(), m_pDepthStencilView.Get());
+
+			// Setup the viewport
+			D3D11_VIEWPORT vp;
+			vp.Width = (float)sd.BufferDesc.Width;
+			vp.Height = (float)sd.BufferDesc.Height;
+			vp.MinDepth = 0.0f;
+			vp.MaxDepth = 1.0f;
+			vp.TopLeftX = 0;
+			vp.TopLeftY = 0;
+			m_pDeviceContext->RSSetViewports(1, &vp);
+		}
+	}
+}
+
+
+
 //------------------------------------------------------------------------------------------
 //	アプリケーション処理。アプリのメイン関数。
 //------------------------------------------------------------------------------------------
@@ -582,16 +771,16 @@ void App::OnRender()
 
 		//Rotation
 		if (GetKeyState(VK_UP) & 0x80) {
-			cameraRotX += 0.005f;
+			cameraRotX += 0.0075f;
 		}
 		if (GetKeyState(VK_DOWN) & 0x80) {
-			cameraRotX -= 0.005f;
+			cameraRotX -= 0.0075f;
 		}
 		if (GetKeyState(VK_RIGHT) & 0x80) {
-			cameraRotY -= 0.005f;
+			cameraRotY -= 0.0075f;
 		}
 		if (GetKeyState(VK_LEFT) & 0x80) {
-			cameraRotY += 0.005f;
+			cameraRotY += 0.0075f;
 		}
 
 		//Zoom
@@ -621,12 +810,17 @@ void App::OnRender()
 	//D3DXVec3TransformCoord(&upVec, &upVec, &camWorldMatrix);
 	D3DXMatrixLookAtLH(&m_ViewMatrix, &cameraPos, &lookAtPos, &upVec);
 
+	// Get window size
+	RECT rc;
+	GetClientRect(m_hWnd, &rc);
+	UINT width = rc.right - rc.left;
+	UINT height = rc.bottom - rc.top;
 
 	//プロジェクション行列（射影変換）
 	D3DXMatrixPerspectiveFovLH(
 		&m_ProjectionMatrix,
 		(float)D3DX_PI / 4.0,							//視野角
-		(float)WINDOW_WIDTH / (float)WINDOW_HEIGHT,		//アスペクト比
+		(float)width / (float)height,		//アスペクト比
 		0.1f,											//near clip
 		1000.0f);										//far clip
 
@@ -635,8 +829,8 @@ void App::OnRender()
 
 	//ビューポートの設定
 	D3D11_VIEWPORT vp;
-	vp.Width	= WINDOW_WIDTH;
-	vp.Height	= WINDOW_HEIGHT;
+	vp.Width	= (float)width;
+	vp.Height	= (float)height;
 	vp.MinDepth = 0.0f;
 	vp.MaxDepth = 1.0f;
 	vp.TopLeftX = 0;
@@ -656,219 +850,12 @@ void App::OnRender()
 	m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);	//深度バッファクリア
 
 
-	//キーボードによる入力はとりあえずここで
-	char str[60];
-
-	//ObjectのRotation
-	static float roll = 0.0f;
-	static float pitch = 0.0f;
-	if (GetKeyState('O') & 0x80) {
-		if (GetKeyState(VK_UP) & 0x80) {
-			pitch += 0.05f;
-		}
-		if (GetKeyState(VK_DOWN) & 0x80) {
-			pitch -= 0.05f;
-		}
-		if (GetKeyState(VK_RIGHT) & 0x80) {
-			roll -= 0.05f;
-		}
-		if (GetKeyState(VK_LEFT) & 0x80) {
-			roll += 0.05f;
-		}
-	}
-
-
-	//LightのRotation
-	static float lightRotX = PI * 0.2f;
-	static float lightRotY = PI * 0.8f;
-	if (GetKeyState('L') & 0x80) {
-
-		if (GetKeyState(VK_UP) & 0x80) {
-			lightRotX += 0.01f;
-		}
-		if (GetKeyState(VK_DOWN) & 0x80) {
-			lightRotX -= 0.01f;
-		}
-		if (GetKeyState(VK_RIGHT) & 0x80) {
-			lightRotY += 0.01f;
-		}
-		if (GetKeyState(VK_LEFT) & 0x80) {
-			lightRotY -= 0.01f;
-		}
-	}
-
-
-	//Global Roughness
-	static D3DXVECTOR2 roughness(0.25f, 0.25f);
-	if (GetKeyState('R') & 0x80) {
-		if (GetKeyState(VK_RIGHT) & 0x80)
-		{
-			roughness.x += 0.001f;
-		}
-		else if ((GetKeyState(VK_LEFT) & 0x80) && (roughness.x > 0.0f))
-		{
-			roughness.x -= 0.001f;
-		}
-		if (GetKeyState(VK_UP) & 0x80)
-		{
-			roughness.y += 0.001f;
-		}
-		else if ((GetKeyState(VK_DOWN) & 0x80) && (roughness.y > 0.0f))
-		{
-			roughness.y -= 0.001f;
-		}
-
-		sprintf(str, "roughness=%f, %f", roughness.x, roughness.y);
-		SetWindowTextA(m_hWnd, str);
-	}
-
-	//Micro Roughness
-	static D3DXVECTOR2 microRoughness(0.02f, 0.02f);
-	if (GetKeyState('M') & 0x80) {
-		if ((GetKeyState(VK_RIGHT) & 0x80) && (microRoughness.x < roughness.x))
-		{
-			microRoughness.x += 0.001f;
-		}
-		else if ((GetKeyState(VK_LEFT) & 0x80) && (microRoughness.x > 0.0f))
-		{
-			microRoughness.x -= 0.001f;
-		}
-		if ((GetKeyState(VK_UP) & 0x80) && (microRoughness.y < roughness.y))
-		{
-			microRoughness.y += 0.001f;
-		}
-		else if ((GetKeyState(VK_DOWN) & 0x80) && (microRoughness.y > 0.0f))
-		{
-			microRoughness.y -= 0.001f;
-		}
-		sprintf(str, "microRoughness=%f , %f", microRoughness.x, microRoughness.y);
-		SetWindowTextA(m_hWnd, str);
-	}
-
-	//Variation
-	static float variation = 860.0f;
-	if (GetKeyState('V') & 0x80) {
-		if (GetKeyState(VK_UP) & 0x80)
-		{
-			variation += 10.0f;
-		}
-		if (GetKeyState(VK_DOWN) & 0x80)
-		{
-			variation -= 10.0f;
-		}
-		if (GetKeyState(VK_RIGHT) & 0x80)
-		{
-			variation += 0.1f;
-		}
-		if (GetKeyState(VK_LEFT) & 0x80)
-		{
-			variation -= 0.1f;
-		}
-		sprintf(str, "variation=%f", variation);
-		SetWindowTextA(m_hWnd, str);
-	}
-
-	//Density
-	static float density = 5.0e13;
-	static float exponet = 13.0f;
-	if (GetKeyState('D') & 0x80) {
-		if (GetKeyState(VK_UP) & 0x80)
-		{
-			exponet += 0.1f;
-		}
-		if (GetKeyState(VK_DOWN) & 0x80)
-		{
-			exponet -= 0.1f;
-		}
-		if (GetKeyState(VK_RIGHT) & 0x80)
-		{
-			exponet += 0.01f;
-		}
-		if (GetKeyState(VK_LEFT) & 0x80)
-		{
-			exponet-= 0.01f;
-		}
-
-		density = pow(10, exponet);
-		sprintf(str, "density=%e", density);
-
-		SetWindowTextA(m_hWnd, str);
-	}
-	
-	//searchConeAngle
-	static float searchConeAngle = 0.01f;
-	if (GetKeyState('S') & 0x80) {
-		if (GetKeyState(VK_RIGHT) & 0x80)
-		{
-			searchConeAngle += 0.001f;
-		}
-		if (GetKeyState(VK_LEFT) & 0x80)
-		{
-			searchConeAngle -= 0.001;
-		}
-		sprintf(str, "searchConeAngle=%f", searchConeAngle);
-		SetWindowTextA(m_hWnd, str);
-	}
-
-	//dynamicRange
-	static float dynamicRange = 10.0f;
-	if (GetKeyState('Q') & 0x80) {
-		if (GetKeyState(VK_RIGHT) & 0x80)
-		{
-			dynamicRange += 10.0f;
-		}
-		if (GetKeyState(VK_LEFT) & 0x80)
-		{
-			dynamicRange -= 10.0f;
-		}
-		sprintf(str, "dynamicRange=%f", dynamicRange);
-		SetWindowTextA(m_hWnd, str);
-	}
-
-	//glints Blightness & shading Blightness
-	static float glintsBrightness = 2.0f;
-	static float shadingBribhtness = 7.0f;
-	if (GetKeyState('B') & 0x80) {
-		if (GetKeyState(VK_UP) & 0x80)
-		{
-			shadingBribhtness += 0.1f;
-		}
-		if (GetKeyState(VK_DOWN) & 0x80)
-		{
-			shadingBribhtness -= 0.1f;
-		}
-		if (GetKeyState(VK_RIGHT) & 0x80)
-		{
-			glintsBrightness += 0.1f;
-		}
-		if (GetKeyState(VK_LEFT) & 0x80)
-		{
-			glintsBrightness -= 0.1f;
-		}
-
-		sprintf(str, "shadingBribhtness=%f / glintsBrightness=%f", shadingBribhtness, glintsBrightness);
-
-		SetWindowTextA(m_hWnd, str);
-	}
-
 	//モデルのWorld変換行列
-	D3DXMATRIX WorldMatrix, RollMatrix, PitchMatrix, ScallMatrix;
-	D3DXMatrixRotationX(&PitchMatrix, pitch);
-	D3DXMatrixRotationY(&RollMatrix, roll);
+	D3DXMATRIX WorldMatrix, ScallMatrix, RotateMatrix;
 	//D3DXMatrixScaling(&ScallMatrix, 2.0, 2.0f, 2.0f);
-	D3DXMatrixScaling(&ScallMatrix, 1.0f / 200.0f, 1.0f / 200.0f, 1.0f / 200.0f);
-	WorldMatrix = ScallMatrix* RollMatrix * PitchMatrix;
-
-
-	//LightのWorld変換行列
-	D3DXVECTOR3 lightPos(0.0f, 0.0f, -5.0f);
-	D3DXMATRIX lightWorldMatrix, lightRotXMatrix, lightRotYMatrix, lightTranslationMatrix;
-	D3DXMatrixRotationX(&lightRotXMatrix, lightRotX);
-	D3DXMatrixRotationY(&lightRotYMatrix, lightRotY);
-	//D3DXMatrixTranslation(&lightTranslationMatrix, 0.0f, 0.0, 0.0f);
-	lightWorldMatrix = lightRotXMatrix * lightRotYMatrix;
-	D3DXVec3TransformCoord(&lightPos, &lightPos, &lightWorldMatrix);
-
+	D3DXMatrixScaling(&ScallMatrix, g_ObjScale, g_ObjScale, g_ObjScale);
+	D3DXMatrixRotationQuaternion(&RotateMatrix, &g_ObjRotation);
+	WorldMatrix = ScallMatrix * RotateMatrix;
 
 	//シェーダーのコンスタントバッファーに各種データを渡す
 	ConstantBufferGlint cbg;
@@ -884,16 +871,16 @@ void App::OnRender()
 		D3DXMatrixTranspose(&cbg.W, &cbg.W);
 
 		cbg.cameraPos = cameraPos;
-		cbg.lightPos = lightPos;
+		cbg.lightPos = g_LightDir;
 		  
-		cbg.roughness = roughness;
-		cbg.microRoughness = microRoughness;
-		cbg.variation = variation;
-		cbg.density = density;
-		cbg.searchConeAngle = searchConeAngle;
-		cbg.dynamicRange = dynamicRange;
-		cbg.glintsBrightness = glintsBrightness;
-		cbg.shadingBribhtness = shadingBribhtness;
+		cbg.roughness = g_Roughness;
+		cbg.microRoughness = g_MicroRoughness;
+		cbg.variation = g_Variation;
+		cbg.density = pow(10, g_Density);
+		cbg.searchConeAngle = g_SearchConeAngle;
+		cbg.dynamicRange = g_DynamicRange;
+		cbg.glintsBrightness = g_GlintsBrightness;
+		cbg.shadingBribhtness = g_ShadingBribhtness;
 
 
 		memcpy_s(pData.pData, pData.RowPitch, (void*)(&cbg), sizeof(cbg));
@@ -945,8 +932,7 @@ void App::OnRender()
 	//------------------------------------------------------------------------------------------
 	//モデルのWorld変換行列
 	D3DXMatrixScaling(&ScallMatrix, 20.0, 20.0f, 20.0f);
-	//D3DXMatrixScaling(&ScallMatrix, 1.0f / 150.0f, 1.0f / 150.0f, 1.0f / 150.0f);
-	WorldMatrix = ScallMatrix* RollMatrix * PitchMatrix;
+	WorldMatrix = ScallMatrix* RotateMatrix;
 	
 	//シェーダーのコンスタントバッファーに各種データを渡す
 	ConstantBufferSky cbs;
@@ -961,7 +947,7 @@ void App::OnRender()
 		D3DXMatrixTranspose(&cbs.W, &cbs.W);
 
 		cbs.cameraPos = cameraPos;
-		cbs.lightPos = lightPos;
+		cbs.lightPos = g_LightDir;
 		
 		memcpy_s(pData.pData, pData.RowPitch, (void*)(&cbs), sizeof(cbs));
 		m_pDeviceContext->Unmap(m_pConstantBuffer[DRAW_SKY].Get(), 0);
@@ -1001,6 +987,12 @@ void App::OnRender()
 
 	//プリミティブをレンダリング
 	m_pDeviceContext->DrawIndexed(NumFace[DRAW_SKY] * 3, 0, 0);
+
+	//------------------------------------------------------------------------------------------
+	// Draw tweak bars
+	//------------------------------------------------------------------------------------------
+	TwDraw();
+
 
 	m_pSwapChain->Present(0, 0);	//画面更新（バックバッファをフロントバッファに）	
 }

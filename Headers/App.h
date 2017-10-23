@@ -54,9 +54,13 @@ public:
 	~App();
 
 	int Run();
+	
+
+protected:
+	static LRESULT CALLBACK WndProcWrapper(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
 
 private:
-
 	//=============================================================================================
 	//	構造体
 	//=============================================================================================
@@ -79,7 +83,6 @@ private:
 		D3DXVECTOR2 texCoord;
 	};
 
-
 	//=============================================================================================
 	//	コンスタントバッファ
 	//=============================================================================================
@@ -87,8 +90,8 @@ private:
 	{
 		ALIGN(16) D3DXMATRIX  WVP;
 		ALIGN(16) D3DXMATRIX  W;
-		ALIGN(16) D3DXVECTOR3  cameraPos;
-		ALIGN(16) D3DXVECTOR3  lightPos;
+		ALIGN(16) D3DXVECTOR3 cameraPos;
+		ALIGN(16) D3DXVECTOR3 lightPos;
 		ALIGN(16) D3DXVECTOR2 roughness;
 		ALIGN(16) D3DXVECTOR2 microRoughness;
 		ALIGN(16) float variation;
@@ -141,11 +144,13 @@ private:
 	//	private methods
 	//=============================================================================================
 	bool InitWindow();
+	bool InitAntTweakBar();
 	bool InitD3D();
 	bool InitShader();
+	void ResizeWindow(LPARAM lParam);
 	void MainLoop();
 	void OnRender();
 
-	static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 };
 #endif // !_APP_H_

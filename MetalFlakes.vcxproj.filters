@@ -12,10 +12,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Resources\Shaders\DrawTexture.hlsl">
+    <FxCompile Include="Resources\Shaders\DrawSky.hlsl">
       <Filter>Resources</Filter>
     </FxCompile>
-    <FxCompile Include="Resources\Shaders\DrawSky.hlsl">
+    <FxCompile Include="Resources\Shaders\DrawGlint.hlsl">
       <Filter>Resources</Filter>
     </FxCompile>
   </ItemGroup>

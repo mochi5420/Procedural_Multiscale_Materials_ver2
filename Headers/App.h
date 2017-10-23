@@ -36,6 +36,7 @@ static const int WINDOW_HEIGHT = 720;	//ウィンドウ高さ
 static const wchar_t* const APP_NAME = L"Window";	//Windowのタイトル
 static const int DRAW_GLINT = 0;
 static const int DRAW_SKY = 1;
+static const float PI = 3.1415926536f;
 //static const LPSTR OBJ_FILE = "Resources/Obj/chess.obj";
 static const LPSTR OBJ_FILE = "Resources/Obj/VWUP.obj";
 static const wchar_t* const CUBE_MAP = L"Resources/Textures/sunsetcube1024.dds";

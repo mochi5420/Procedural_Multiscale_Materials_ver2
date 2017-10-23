@@ -6,7 +6,6 @@
 #include "Sphere.h"
 #include "FPS.h"
 
-
 //------------------------------------------------------------------------------------------
 //	constructor & destructor
 //------------------------------------------------------------------------------------------
@@ -33,7 +32,7 @@ int App::Run()
 	{
 		return 0;
 	}
-
+	
 	if (FAILED(InitShader()))	//Initialize Shader
 	{
 		return 0;
@@ -338,7 +337,7 @@ bool App::InitShader()
 	// ---------------------------------------------------------------------	
 	//ブロブからDRAW_GLINTバーテックスシェーダー作成
 	hr = D3DX11CompileFromFile(
-			L"Resources/Shaders/DrawTexture.hlsl",
+			L"Resources/Shaders/DrawGlint.hlsl",
 			nullptr,
 			nullptr,
 			"VS",
@@ -391,7 +390,7 @@ bool App::InitShader()
 
 	//ブロブからDRAW_GLINTピクセルシェーダー作成
 	hr = D3DX11CompileFromFile(
-			L"Resources/Shaders/DrawTexture.hlsl",
+			L"Resources/Shaders/DrawGlint.hlsl",
 			nullptr,
 			nullptr,
 			"PS",
@@ -576,8 +575,8 @@ void App::MainLoop()
 void App::OnRender()
 {
 	//cameraの移動
-	static float cameraRotX = 0.0f;
-	static float cameraRotY = 0.0f;
+	static float cameraRotX = PI * 0.1f;
+	static float cameraRotY = -PI * 0.15f;
 	static float camZoom = 0.0f;
 	if (GetKeyState('C') & 0x80) {
 
@@ -629,7 +628,7 @@ void App::OnRender()
 		(float)D3DX_PI / 4.0,							//視野角
 		(float)WINDOW_WIDTH / (float)WINDOW_HEIGHT,		//アスペクト比
 		0.1f,											//near clip
-		100.0f);										//far clip
+		1000.0f);										//far clip
 
 	float ClearColor[4] = { 0.178, 0.178, 0.178, 1 };// クリア色作成　RGBAの順
 
@@ -665,42 +664,42 @@ void App::OnRender()
 	static float pitch = 0.0f;
 	if (GetKeyState('O') & 0x80) {
 		if (GetKeyState(VK_UP) & 0x80) {
-			pitch += 0.01f;
+			pitch += 0.05f;
 		}
 		if (GetKeyState(VK_DOWN) & 0x80) {
-			pitch -= 0.01f;
+			pitch -= 0.05f;
 		}
 		if (GetKeyState(VK_RIGHT) & 0x80) {
-			roll -= 0.01f;
+			roll -= 0.05f;
 		}
 		if (GetKeyState(VK_LEFT) & 0x80) {
-			roll += 0.01f;
+			roll += 0.05f;
 		}
 	}
 
 
 	//LightのRotation
-	static float lightRotX = 0.0f;
-	static float lightRotY = 0.0f;
+	static float lightRotX = PI * 0.2f;
+	static float lightRotY = PI * 0.8f;
 	if (GetKeyState('L') & 0x80) {
 
 		if (GetKeyState(VK_UP) & 0x80) {
-			lightRotX += 0.005f;
+			lightRotX += 0.01f;
 		}
 		if (GetKeyState(VK_DOWN) & 0x80) {
-			lightRotX -= 0.005f;
+			lightRotX -= 0.01f;
 		}
 		if (GetKeyState(VK_RIGHT) & 0x80) {
-			lightRotY -= 0.005f;
+			lightRotY += 0.01f;
 		}
 		if (GetKeyState(VK_LEFT) & 0x80) {
-			lightRotY += 0.005f;
+			lightRotY -= 0.01f;
 		}
 	}
 
 
 	//Global Roughness
-	static D3DXVECTOR2 roughness(0.12f, 0.12f);
+	static D3DXVECTOR2 roughness(0.25f, 0.25f);
 	if (GetKeyState('R') & 0x80) {
 		if (GetKeyState(VK_RIGHT) & 0x80)
 		{
@@ -724,7 +723,7 @@ void App::OnRender()
 	}
 
 	//Micro Roughness
-	static D3DXVECTOR2 microRoughness(0.1f, 0.001f);
+	static D3DXVECTOR2 microRoughness(0.02f, 0.02f);
 	if (GetKeyState('M') & 0x80) {
 		if ((GetKeyState(VK_RIGHT) & 0x80) && (microRoughness.x < roughness.x))
 		{
@@ -747,8 +746,16 @@ void App::OnRender()
 	}
 
 	//Variation
-	static float variation = 0.0f;
+	static float variation = 860.0f;
 	if (GetKeyState('V') & 0x80) {
+		if (GetKeyState(VK_UP) & 0x80)
+		{
+			variation += 10.0f;
+		}
+		if (GetKeyState(VK_DOWN) & 0x80)
+		{
+			variation -= 10.0f;
+		}
 		if (GetKeyState(VK_RIGHT) & 0x80)
 		{
 			variation += 0.1f;
@@ -762,8 +769,8 @@ void App::OnRender()
 	}
 
 	//Density
-	static float density = 1.0e10;
-	static float exponet = 10.0f;
+	static float density = 5.0e13;
+	static float exponet = 13.0f;
 	if (GetKeyState('D') & 0x80) {
 		if (GetKeyState(VK_UP) & 0x80)
 		{
@@ -789,7 +796,7 @@ void App::OnRender()
 	}
 	
 	//searchConeAngle
-	static float searchConeAngle = 0.06f;
+	static float searchConeAngle = 0.01f;
 	if (GetKeyState('S') & 0x80) {
 		if (GetKeyState(VK_RIGHT) & 0x80)
 		{
@@ -819,8 +826,8 @@ void App::OnRender()
 	}
 
 	//glints Blightness & shading Blightness
-	static float glintsBrightness = 0.4f;
-	static float shadingBribhtness = 1.5f;
+	static float glintsBrightness = 2.0f;
+	static float shadingBribhtness = 7.0f;
 	if (GetKeyState('B') & 0x80) {
 		if (GetKeyState(VK_UP) & 0x80)
 		{
@@ -849,17 +856,17 @@ void App::OnRender()
 	D3DXMatrixRotationX(&PitchMatrix, pitch);
 	D3DXMatrixRotationY(&RollMatrix, roll);
 	//D3DXMatrixScaling(&ScallMatrix, 2.0, 2.0f, 2.0f);
-	D3DXMatrixScaling(&ScallMatrix, 1.0f / 150.0f, 1.0f / 150.0f, 1.0f / 150.0f);
+	D3DXMatrixScaling(&ScallMatrix, 1.0f / 200.0f, 1.0f / 200.0f, 1.0f / 200.0f);
 	WorldMatrix = ScallMatrix* RollMatrix * PitchMatrix;
 
 
 	//LightのWorld変換行列
-	D3DXMATRIX lightWorldMatrix, lightRotXMatrix, lightRotYMatrix;
+	D3DXVECTOR3 lightPos(0.0f, 0.0f, -5.0f);
+	D3DXMATRIX lightWorldMatrix, lightRotXMatrix, lightRotYMatrix, lightTranslationMatrix;
 	D3DXMatrixRotationX(&lightRotXMatrix, lightRotX);
 	D3DXMatrixRotationY(&lightRotYMatrix, lightRotY);
+	//D3DXMatrixTranslation(&lightTranslationMatrix, 0.0f, 0.0, 0.0f);
 	lightWorldMatrix = lightRotXMatrix * lightRotYMatrix;
-
-	D3DXVECTOR3 lightPos(0.0f, 0.0f, -5.0f);
 	D3DXVec3TransformCoord(&lightPos, &lightPos, &lightWorldMatrix);
 
 

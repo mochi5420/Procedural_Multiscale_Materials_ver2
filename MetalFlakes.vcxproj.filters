@@ -35,6 +35,9 @@
     <ClCompile Include="Sources\Sphere.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\ScreenShot.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Headers\FPS.h">
@@ -50,6 +53,9 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="Headers\Sphere.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\ScreenShot.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

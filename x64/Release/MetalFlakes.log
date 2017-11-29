@@ -65,12 +65,12 @@ D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers
 D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(99): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
 D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(100): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
 D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(108): warning C4324: 'App::ConstantBufferSky': アラインメント指定子のために構造体がパッドされました
-Sources\App.cpp(183): warning C4305: 'return': 'HRESULT' から 'bool' へ切り詰めます。
-Sources\App.cpp(827): warning C4838: 'double' から 'float' への変換には縮小変換が必要です
-Sources\App.cpp(827): warning C4305: '初期化中': 'double' から 'float' へ切り詰めます。
-Sources\App.cpp(879): warning C4244: '=': 'double' から 'float' への変換です。データが失われる可能性があります。
+Sources\App.cpp(193): warning C4305: 'return': 'HRESULT' から 'bool' へ切り詰めます。
+Sources\App.cpp(837): warning C4838: 'double' から 'float' への変換には縮小変換が必要です
+Sources\App.cpp(837): warning C4305: '初期化中': 'double' から 'float' へ切り詰めます。
+Sources\App.cpp(889): warning C4244: '=': 'double' から 'float' への変換です。データが失われる可能性があります。
   コード生成しています。
-  8 of 676 functions ( 1.2%) were compiled, the rest were copied from previous compilation.
+  10 of 690 functions ( 1.4%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     3 functions had inline decision re-evaluated but remain unchanged
   コード生成が終了しました。

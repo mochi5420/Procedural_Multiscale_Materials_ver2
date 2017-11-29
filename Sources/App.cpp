@@ -7,23 +7,27 @@
 #include "FPS.h"
 #include <vector>
 #include <AntTweakBar.h>
+#include "ScreenShot.h"
 
 //------------------------------------------------------------------------------------------
 //	global variables
 //------------------------------------------------------------------------------------------
-static D3DXVECTOR3 g_LightDir(-2.82f, 2.24f, 3.35f);
-static D3DXQUATERNION g_ObjRotation;
-static float g_ObjScale = 1.0f / 200.0f;
+namespace {
+	D3DXVECTOR3 g_LightDir(-2.82f, 2.24f, 3.35f);
+	D3DXQUATERNION g_ObjRotation;
+	float g_ObjScale = 1.0f / 200.0f;
 
-static D3DXVECTOR2 g_Roughness(0.25f, 0.25f);	//Global Roughness
-static D3DXVECTOR2 g_MicroRoughness(0.02f, 0.02f);	//Micro Roughness
-static float g_Variation = 860.0f;	//Variation
-static float g_Density = 13.0f;	//Density
-static float g_SearchConeAngle = 0.01f; 	//SearchConeAngle
-static float g_DynamicRange = 10.0f;	//dynamicRange
-static float g_GlintsBrightness = 2.0f;
-static float g_ShadingBribhtness = 7.0f;
+	D3DXVECTOR2 g_Roughness(0.25f, 0.25f);	//Global Roughness
+	D3DXVECTOR2 g_MicroRoughness(0.02f, 0.02f);	//Micro Roughness
+	float g_Variation = 860.0f;	//Variation
+	float g_Density = 13.0f;	//Density
+	float g_SearchConeAngle = 0.01f; 	//SearchConeAngle
+	float g_DynamicRange = 10.0f;	//dynamicRange
+	float g_GlintsBrightness = 2.0f;
+	float g_ShadingBribhtness = 7.0f;
 
+	bool isScreenShot = false;
+}
 
 //------------------------------------------------------------------------------------------
 //	constructor & destructor
@@ -98,6 +102,12 @@ LRESULT App::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					break;
 			}
 
+			break;
+		}
+		case WM_KEYUP:
+		{
+			if (wParam == VK_F2)
+				isScreenShot = true;
 			break;
 		}
 		case WM_DESTROY:
@@ -993,6 +1003,15 @@ void App::OnRender()
 	//------------------------------------------------------------------------------------------
 	TwDraw();
 
+
+	//------------------------------------------------------------------------------------------
+	// Screen Shot
+	//------------------------------------------------------------------------------------------
+	static ScreenShot screenShot;
+	if (isScreenShot) {
+		screenShot.CreateScreenShot(m_pDevice.Get(), m_pDeviceContext.Get(), m_pSwapChain.Get(), m_hWnd);
+		isScreenShot = false;
+	}
 
 	m_pSwapChain->Present(0, 0);	//画面更新（バックバッファをフロントバッファに）	
 }

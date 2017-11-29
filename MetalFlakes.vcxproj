@@ -23,6 +23,7 @@
     <ClCompile Include="Sources\FPS.cpp" />
     <ClCompile Include="Sources\Main.cpp" />
     <ClCompile Include="Sources\ObjMeshLoader.cpp" />
+    <ClCompile Include="Sources\ScreenShot.cpp" />
     <ClCompile Include="Sources\Sphere.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -30,6 +31,7 @@
     <ClInclude Include="Headers\Debug.h" />
     <ClInclude Include="Headers\FPS.h" />
     <ClInclude Include="Headers\ObjMeshLoader.h" />
+    <ClInclude Include="Headers\ScreenShot.h" />
     <ClInclude Include="Headers\Sphere.h" />
   </ItemGroup>
   <ItemGroup>

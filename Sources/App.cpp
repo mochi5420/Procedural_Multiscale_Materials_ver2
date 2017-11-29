@@ -11,18 +11,18 @@
 //------------------------------------------------------------------------------------------
 //	global variables
 //------------------------------------------------------------------------------------------
-D3DXVECTOR3 g_LightDir(-2.82f, 2.24f, 3.35f);
-D3DXQUATERNION g_ObjRotation;
-float g_ObjScale = 1.0f / 200.0f;
+static D3DXVECTOR3 g_LightDir(-2.82f, 2.24f, 3.35f);
+static D3DXQUATERNION g_ObjRotation;
+static float g_ObjScale = 1.0f / 200.0f;
 
-D3DXVECTOR2 g_Roughness(0.25f, 0.25f);	//Global Roughness
-D3DXVECTOR2 g_MicroRoughness(0.02f, 0.02f);	//Micro Roughness
-float g_Variation = 860.0f;	//Variation
-float g_Density = 13.0f;	//Density
-float g_SearchConeAngle = 0.01f; 	//SearchConeAngle
-float g_DynamicRange = 10.0f;	//dynamicRange
-float g_GlintsBrightness = 2.0f;
-float g_ShadingBribhtness = 7.0f;
+static D3DXVECTOR2 g_Roughness(0.25f, 0.25f);	//Global Roughness
+static D3DXVECTOR2 g_MicroRoughness(0.02f, 0.02f);	//Micro Roughness
+static float g_Variation = 860.0f;	//Variation
+static float g_Density = 13.0f;	//Density
+static float g_SearchConeAngle = 0.01f; 	//SearchConeAngle
+static float g_DynamicRange = 10.0f;	//dynamicRange
+static float g_GlintsBrightness = 2.0f;
+static float g_ShadingBribhtness = 7.0f;
 
 
 //------------------------------------------------------------------------------------------
@@ -116,13 +116,13 @@ LRESULT CALLBACK App::WndProcWrapper(HWND hWnd, UINT message, WPARAM wParam, LPA
 	//staticな関数からメンバを呼ぶことはできない。
 	
 	//ここで元々のプロシージアのアドレスを取得する。
-	App* instance = reinterpret_cast<App*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+	App* instance = (App*)(::GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
 	if (!instance) {//取得できなかった場合（まだ作りたてである）
 		if (message == WM_CREATE) {
 			// Save the DXSample* passed in to CreateWindow.
-			LPCREATESTRUCT pCreateStruct = reinterpret_cast<LPCREATESTRUCT>(lParam);
-			SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pCreateStruct->lpCreateParams));
+			LPCREATESTRUCT pCreateStruct = (LPCREATESTRUCT)(lParam);
+			SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)(pCreateStruct->lpCreateParams));
 			
 		}
 	}

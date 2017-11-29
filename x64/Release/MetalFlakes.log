@@ -55,6 +55,8 @@ c:\program files (x86)\microsoft directx sdk (june 2010)\include\d3d10.h(608): w
   C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\shared\winerror.h(52771): note: 'D3D10_ERROR_TOO_MANY_UNIQUE_STATE_OBJECTS' の以前の定義を確認してください
 c:\program files (x86)\microsoft directx sdk (june 2010)\include\d3d10.h(609): warning C4005: 'D3D10_ERROR_FILE_NOT_FOUND': マクロが再定義されました。
   C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\shared\winerror.h(52780): note: 'D3D10_ERROR_FILE_NOT_FOUND' の以前の定義を確認してください
+D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(92): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
+D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(93): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
 D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(94): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
 D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(95): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
 D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(96): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
@@ -62,9 +64,7 @@ D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers
 D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(98): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
 D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(99): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
 D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(100): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
-D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(101): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
-D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(102): warning C4324: 'App::ConstantBufferGlint': アラインメント指定子のために構造体がパッドされました
-D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(110): warning C4324: 'App::ConstantBufferSky': アラインメント指定子のために構造体がパッドされました
+D:\MorishimaLab\MetalFlake\Programs\Procedural_Multiscale_Materials_ver2\Headers\App.h(108): warning C4324: 'App::ConstantBufferSky': アラインメント指定子のために構造体がパッドされました
 Sources\App.cpp(183): warning C4305: 'return': 'HRESULT' から 'bool' へ切り詰めます。
 Sources\App.cpp(827): warning C4838: 'double' から 'float' への変換には縮小変換が必要です
 Sources\App.cpp(827): warning C4305: '初期化中': 'double' から 'float' へ切り詰めます。

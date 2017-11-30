@@ -15,11 +15,12 @@ cbuffer CONSTANT_BUFFER :register(b0)
     float DynamicRange      : packoffset(c15);
     float GlintsBlightness  : packoffset(c16);
     float ShadingBlightness : packoffset(c17);
+    int CubeMap             : packoffset(c18);
 };
 
 
 SamplerState CubeMapSamplerState;
-TextureCube CubeMap;
+TextureCube CubeMapTex;
 
 
 //------------------------------------------------------------------------------------------
@@ -467,10 +468,13 @@ float4 PS(VS_OUTPUT input) : SV_Target
     if (specularity > 0.0 && dif > 0.0 && dot(V, normal) > 0.0)
         col += specularity * (glints(texCO, duvdx, duvdy, ctf, L, normal, V, Roughness, MicroRoughness, SearchConeAngle, Variation, DynamicRange, Density))
                     * GlintsBlightness; // * lerp(0.05, 1.0, occ);
+    
+    if (CubeMap)
+    {
+        float Reflective = 0.25;
 
-    float Reflective = 0.25;
-
-    col = lerp(col, CubeMap.Sample(CubeMapSamplerState, R).xyz, Reflective);
+        col = lerp(col, CubeMapTex.Sample(CubeMapSamplerState, R).xyz, Reflective);
+    }
 
     return float4(col, 1);
 }

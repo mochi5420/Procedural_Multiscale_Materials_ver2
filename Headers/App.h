@@ -81,6 +81,22 @@ private:
 		D3DXVECTOR2 texCoord;
 	};
 
+	enum Objects
+	{
+		OBJ,
+		SKY,
+		QUAD,
+		CUBE,
+		OBJECT_NUM
+	};
+
+	enum Shaders
+	{
+		DRAW_GLINT,
+		DRAW_SKY,
+		SHADER_NUM
+	};
+
 	//=============================================================================================
 	//	コンスタントバッファ
 	//=============================================================================================
@@ -98,6 +114,7 @@ private:
 		ALIGN(16) float dynamicRange;
 		ALIGN(16) float glintsBrightness;
 		ALIGN(16) float shadingBribhtness;
+		ALIGN(16) int  cubeMap;
 	};	
 
 	struct ConstantBufferSky
@@ -119,15 +136,16 @@ private:
 	ComPtr<ID3D11RenderTargetView>	m_pRenderTargetView;
 	ComPtr<ID3D11DepthStencilView>	m_pDepthStencilView;
 	ComPtr<ID3D11Texture2D>			m_pDepthStencil;
-	ComPtr<ID3D11RasterizerState>	m_pRasterizerState[2];
+	ComPtr<ID3D11BlendState>		m_pBlendState[SHADER_NUM];
+	ComPtr<ID3D11RasterizerState>	m_pRasterizerState[SHADER_NUM];
 	ComPtr<ID3D11SamplerState>		m_pSamLinear;
-	ComPtr<ID3D11InputLayout>		m_pVertexLayout[2];
-	ComPtr<ID3D11VertexShader>		m_pVertexShader[2];
-	ComPtr<ID3D11PixelShader>		m_pPixelShader[2];
-	ComPtr<ID3D11Buffer>			m_pConstantBuffer[2];
-	ComPtr<ID3D11Buffer>			m_pVertexBuffer[2];	
-	ComPtr<ID3D11Buffer>            m_pIndexBuffer[2];
-	DWORD							NumFace[2];
+	ComPtr<ID3D11InputLayout>		m_pVertexLayout[SHADER_NUM];
+	ComPtr<ID3D11VertexShader>		m_pVertexShader[SHADER_NUM];
+	ComPtr<ID3D11PixelShader>		m_pPixelShader[SHADER_NUM];
+	ComPtr<ID3D11Buffer>			m_pConstantBuffer[SHADER_NUM];
+	ComPtr<ID3D11Buffer>			m_pVertexBuffer[OBJECT_NUM];
+	ComPtr<ID3D11Buffer>            m_pIndexBuffer[OBJECT_NUM];
+	DWORD							NumFace[OBJECT_NUM];
 
 	//環境マップ
 	ComPtr<ID3D11Texture2D>			 m_pCubeMapTexture;
